@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getBlogs,
+  getMyBlogs,
   getBlogById,
   createBlog,
   updateBlog,
@@ -13,6 +14,9 @@ const router = Router();
 router.route('/')
   .get(getBlogs)
   .post(protect as any, createBlog as any);
+
+// Must be declared before /:id so "mine" is matched as a route, not an ID.
+router.get('/mine', protect as any, getMyBlogs as any);
 
 router.route('/:id')
   .get(getBlogById)

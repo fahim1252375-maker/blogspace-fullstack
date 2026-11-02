@@ -43,22 +43,44 @@ export function removeAuthToken() {
 }
 
 /**
- * Synchronize articles from Backend REST API (/api/blogs)
+ * Synchronize public, published articles from the backend REST API.
+ * Drafts are intentionally excluded from this public endpoint.
  */
 export async function syncPostsFromApi() {
   try {
-    const res = await fetch('/api/blogs?status=all');
+    const res = await fetch('/api/blogs');
     if (res.ok) {
       const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+      if (json.success && Array.isArray(json.data)) {
         localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(json.data));
         return json.data;
       }
     }
   } catch (err) {
-    console.warn('[BlogSpace] Using cached posts from LocalStorage:', err);
+    console.warn('[BlogSpace] Using cached public posts from LocalStorage:', err);
   }
   return getAllPosts();
+}
+
+/**
+ * Synchronize all posts belonging to the signed-in author, including drafts.
+ * The backend verifies the JWT and only returns posts owned by that user.
+ */
+export async function syncMyPostsFromApi() {
+  const token = getAuthToken();
+  if (!token) return getAllPosts();
+
+  const res = await fetch('/api/blogs/mine', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.success || !Array.isArray(json.data)) {
+    throw new Error(json.message || `Unable to load your posts (${res.status})`);
+  }
+
+  // This cache is used by the authenticated dashboard and edit screen.
+  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(json.data));
+  return json.data;
 }
 
 // Default seed users

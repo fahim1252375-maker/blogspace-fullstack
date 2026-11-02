@@ -16,6 +16,7 @@ import {
   showToast,
   escapeHtml,
   syncPostsFromApi,
+  syncMyPostsFromApi,
 } from './blog.js';
 
 let activeFilter = 'all'; // 'all' | 'published' | 'draft'
@@ -52,7 +53,7 @@ export async function initDashboard() {
 
   // Sync latest posts from backend API & re-render
   try {
-    await syncPostsFromApi();
+    await syncMyPostsFromApi();
     renderDashboard();
   } catch (err) {
     console.warn('[BlogSpace Dashboard] Using cached posts:', err);
