@@ -29,66 +29,32 @@ export const getBlogs = async (
 ): Promise<void> => {
   try {
     const { category, author, search } = req.query;
-
     if (isDbConnected()) {
       const query: any = { status: 'published' };
       if (category && category !== 'All') {
         const safeCategory = escapeRegExp(String(category).trim());
-        query.category = new RegExp(`^${safeCategory}import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
-import { Blog } from '../models/Blog.ts';
-import { isDbConnected, isInMemoryFallbackActive } from '../config/db.ts';
-import { inMemoryStore } from '../config/inMemoryStore.ts';
-import { AuthRequest } from '../middleware/authMiddleware.ts';
-
-// Helper to escape special characters for safe regular expression creation (ReDoS prevention)
-const escapeRegExp = (str: string): string => {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
-
-// Helper to compute reading time
-const computeReadingTime = (content: string): number => {
-  const clean = (content || '').replace(/<[^>]*>/g, ' ');
-  const words = clean.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
-};
-
-, 'i');
+        query.category = new RegExp(`^${safeCategory}$`, 'i');
       }
       if (author && mongoose.Types.ObjectId.isValid(String(author))) query.author = author;
       if (search) {
         const safeSearch = escapeRegExp(String(search).trim());
         const searchRegex = new RegExp(safeSearch, 'i');
         query.$or = [
-          { title: searchRegex },
-          { description: searchRegex },
-          { content: searchRegex },
-          { authorName: searchRegex },
+          { title: searchRegex }, { description: searchRegex },
+          { content: searchRegex }, { authorName: searchRegex },
         ];
       }
-
       const blogs = await Blog.find(query).sort({ createdAt: -1 });
       res.status(200).json({
-        success: true,
-        count: blogs.length,
+        success: true, count: blogs.length,
         data: blogs.map((b) => ({
-          id: (b._id as any).toString(),
-          _id: (b._id as any).toString(),
-          title: b.title,
-          slug: b.slug,
-          description: b.description,
-          content: b.content,
-          category: b.category,
-          coverImage: b.coverImage,
+          id: (b._id as any).toString(), _id: (b._id as any).toString(),
+          title: b.title, slug: b.slug, description: b.description,
+          content: b.content, category: b.category, coverImage: b.coverImage,
           authorId: b.author ? b.author.toString() : '',
-          authorName: b.authorName,
-          authorAvatar: b.authorAvatar,
-          status: b.status,
-          readingTime: b.readingTime,
-          views: b.views,
-          likes: b.likes,
-          createdAt: b.createdAt,
-          updatedAt: b.updatedAt,
+          authorName: b.authorName, authorAvatar: b.authorAvatar,
+          status: b.status, readingTime: b.readingTime, views: b.views,
+          likes: b.likes, createdAt: b.createdAt, updatedAt: b.updatedAt,
         })),
       });
     } else if (isInMemoryFallbackActive()) {
@@ -107,8 +73,7 @@ const computeReadingTime = (content: string): number => {
         );
       }
       res.status(200).json({
-        success: true,
-        count: blogs.length,
+        success: true, count: blogs.length,
         data: blogs.map((b) => ({ ...b, authorId: b.author })),
       });
     } else {
@@ -117,9 +82,7 @@ const computeReadingTime = (content: string): number => {
         message: 'Database service unavailable: MongoDB Atlas is required and not connected.',
       });
     }
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
 
 /**
@@ -135,66 +98,32 @@ export const getMyBlogs = async (
   try {
     const currentUser = req.user!;
     const { status, category, search } = req.query;
-
     if (isDbConnected()) {
       const query: any = { author: currentUser.id };
       if (status === 'published' || status === 'draft') query.status = status;
       if (category && category !== 'All') {
         const safeCategory = escapeRegExp(String(category).trim());
-        query.category = new RegExp(`^${safeCategory}import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
-import { Blog } from '../models/Blog.ts';
-import { isDbConnected, isInMemoryFallbackActive } from '../config/db.ts';
-import { inMemoryStore } from '../config/inMemoryStore.ts';
-import { AuthRequest } from '../middleware/authMiddleware.ts';
-
-// Helper to escape special characters for safe regular expression creation (ReDoS prevention)
-const escapeRegExp = (str: string): string => {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
-
-// Helper to compute reading time
-const computeReadingTime = (content: string): number => {
-  const clean = (content || '').replace(/<[^>]*>/g, ' ');
-  const words = clean.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 200));
-};
-
-, 'i');
+        query.category = new RegExp(`^${safeCategory}$`, 'i');
       }
       if (search) {
         const safeSearch = escapeRegExp(String(search).trim());
         const searchRegex = new RegExp(safeSearch, 'i');
         query.$or = [
-          { title: searchRegex },
-          { description: searchRegex },
-          { content: searchRegex },
-          { authorName: searchRegex },
+          { title: searchRegex }, { description: searchRegex },
+          { content: searchRegex }, { authorName: searchRegex },
         ];
       }
-
       const blogs = await Blog.find(query).sort({ createdAt: -1 });
       res.status(200).json({
-        success: true,
-        count: blogs.length,
+        success: true, count: blogs.length,
         data: blogs.map((b) => ({
-          id: (b._id as any).toString(),
-          _id: (b._id as any).toString(),
-          title: b.title,
-          slug: b.slug,
-          description: b.description,
-          content: b.content,
-          category: b.category,
-          coverImage: b.coverImage,
+          id: (b._id as any).toString(), _id: (b._id as any).toString(),
+          title: b.title, slug: b.slug, description: b.description,
+          content: b.content, category: b.category, coverImage: b.coverImage,
           authorId: b.author ? b.author.toString() : '',
-          authorName: b.authorName,
-          authorAvatar: b.authorAvatar,
-          status: b.status,
-          readingTime: b.readingTime,
-          views: b.views,
-          likes: b.likes,
-          createdAt: b.createdAt,
-          updatedAt: b.updatedAt,
+          authorName: b.authorName, authorAvatar: b.authorAvatar,
+          status: b.status, readingTime: b.readingTime, views: b.views,
+          likes: b.likes, createdAt: b.createdAt, updatedAt: b.updatedAt,
         })),
       });
     } else if (isInMemoryFallbackActive()) {
@@ -213,8 +142,7 @@ const computeReadingTime = (content: string): number => {
         );
       }
       res.status(200).json({
-        success: true,
-        count: blogs.length,
+        success: true, count: blogs.length,
         data: blogs.map((b) => ({ ...b, authorId: b.author })),
       });
     } else {
@@ -223,11 +151,8 @@ const computeReadingTime = (content: string): number => {
         message: 'Database service unavailable: MongoDB Atlas is required and not connected.',
       });
     }
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
 };
-
 
 /**
  * @desc    Get single blog by ID

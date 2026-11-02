@@ -36,21 +36,20 @@ export async function initHomePage() {
   setupMobileNav();
   setupNewsletter();
 
-  allPosts = getAllPosts();
+  // Do not render cached author-only drafts on the public homepage.
+  allPosts = [];
 
   renderCategories();
   renderArticles();
   setupSearchInput();
   setupUrlParams();
 
-  // Fetch live articles from Backend REST API
+  // Fetch only published articles from the public backend endpoint.
   try {
     const livePosts = await syncPostsFromApi();
-    if (livePosts && livePosts.length > 0) {
-      allPosts = livePosts;
-      renderCategories();
-      renderArticles();
-    }
+    allPosts = Array.isArray(livePosts) ? livePosts : [];
+    renderCategories();
+    renderArticles();
   } catch (err) {
     console.warn('[BlogSpace] Using offline posts:', err);
   }
