@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — BlogSpace</title>
+    <meta name="description" content="Sign in to your BlogSpace account to write, manage and publish stories." />
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/auth.css" />
+  </head>
+  <body class="auth-page-wrapper">
+    <!-- Header / Brand Link -->
+    <header class="auth-header">
+      <div class="container">
+        <a href="index.html" class="brand-logo">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <span>Blog<span class="brand-highlight">Space</span></span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Auth Container -->
+    <main class="auth-main-container">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h1 class="auth-card-title">Welcome Back</h1>
+          <p class="auth-card-subtitle">Sign in to your author account to publish your next piece.</p>
+        </div>
+
+
+
+        <!-- Dynamic Error Alert -->
+        <div id="auth-error-alert" class="auth-alert hidden" role="alert"></div>
+
+        <!-- Login Form -->
+        <form id="login-form" novalidate>
+          <!-- Email Input -->
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="name@example.com" 
+                required 
+                autocomplete="email" 
+              />
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="form-group">
+            <label for="password" class="form-label">
+              <span>Password</span>
+            </label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                placeholder="Enter your password" 
+                required 
+                autocomplete="current-password" 
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn" 
+                data-target="password" 
+                aria-label="Show password"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Options Row: Remember Me & Forgot Password -->
+          <div class="form-options-row">
+            <label class="checkbox-label" for="remember-me">
+              <input type="checkbox" id="remember-me" name="remember-me" />
+              <span>Remember me</span>
+            </label>
+            <a href="javascript:void(0)" class="forgot-password-link" id="forgot-password-link">Forgot password?</a>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary btn-auth-submit">
+            <span>Sign In</span>
+          </button>
+        </form>
+
+        <div class="auth-card-footer">
+          <span>Don't have an account yet?</span>
+          <a href="register.html">Create one here</a>
+        </div>
+      </div>
+    </main>
+
+    <div class="auth-disclaimer">
+      Client-side LocalStorage session &bull; Designed &amp; Developed by Minhaz Fahim
+    </div>
+
+    <script type="module">
+      import { initLoginPage } from '/js/auth.js';
+      initLoginPage();
+    </script>
+  </body>
+</html>

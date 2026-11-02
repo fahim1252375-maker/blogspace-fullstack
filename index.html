@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlogSpace — Share Your Stories with the World</title>
+    <meta name="description" content="A modern, editorial publishing platform for independent writers, thinkers, and creators." />
+    <meta property="og:title" content="BlogSpace — Share Your Stories with the World" />
+    <meta property="og:description" content="Discover thought-provoking articles on technology, design, culture, and business." />
+    <meta property="og:type" content="website" />
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- Site Navigation -->
+    <header class="site-header">
+      <div class="container">
+        <nav class="navbar" aria-label="Main Navigation">
+          <!-- Brand Logo -->
+          <a href="index.html" class="brand-logo" aria-label="BlogSpace Home">
+            <div class="brand-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </div>
+            <span>Blog<span class="brand-highlight">Space</span></span>
+          </a>
+
+          <!-- Desktop Links -->
+          <div class="nav-links">
+            <a href="index.html" class="nav-link active">Home</a>
+            <a href="#explore" class="nav-link">Explore</a>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="create-blog.html" class="nav-link">Write Story</a>
+          </div>
+
+          <!-- Dynamic Auth UI (Sign In / Register or User Avatar Dropdown) -->
+          <div class="nav-right-actions" id="nav-auth-container">
+            <div class="guest-nav-actions">
+              <a href="login.html" class="btn btn-outline btn-sm">Log In</a>
+              <a href="register.html" class="btn btn-primary btn-sm">Get Started</a>
+            </div>
+          </div>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Mobile Nav Drawer -->
+      <div class="mobile-nav-menu" id="mobile-nav-menu">
+        <div class="mobile-nav-header">
+          <a href="index.html" class="brand-logo">
+            <div class="brand-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <span>BlogSpace</span>
+          </a>
+          <button type="button" class="btn-icon" id="mobile-nav-close" aria-label="Close menu">&times;</button>
+        </div>
+        <div class="mobile-nav-links">
+          <a href="index.html" class="mobile-nav-link">Home</a>
+          <a href="#explore" class="mobile-nav-link">Explore Stories</a>
+          <a href="dashboard.html" class="mobile-nav-link">Author Dashboard</a>
+          <a href="create-blog.html" class="mobile-nav-link">Write a Story</a>
+          <a href="login.html" class="mobile-nav-link">Log In</a>
+          <a href="register.html" class="mobile-nav-link">Create Account</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="container">
+          <div class="hero-inner">
+            <div class="hero-badge">
+              <span class="badge-pulse"></span>
+              <span>Curated Editorial Platform &middot; 2026 Edition</span>
+            </div>
+            <h1 class="hero-title">
+              Share Your Stories <br />
+              <span class="gradient-text">with the World.</span>
+            </h1>
+            <p class="hero-subtitle">
+              A high-craft editorial haven designed for writers, technologists, and creators. 
+              Read thought-provoking perspectives or publish your own insights with zero noise.
+            </p>
+            <div class="hero-actions">
+              <a href="create-blog.html" class="btn btn-primary btn-lg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>Start Writing</span>
+              </a>
+              <a href="#explore" class="btn btn-outline btn-lg">
+                <span>Explore Articles</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Article Spotlight -->
+      <section class="featured-section" id="featured-section">
+        <div class="container">
+          <div id="featured-post-container">
+            <!-- Rendered dynamically by js/main.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Explore & Filter Section -->
+      <section class="controls-section" id="explore">
+        <div class="container">
+          <div class="controls-bar">
+            <!-- Category Pills Filter -->
+            <div class="category-filters-container" id="category-filters" role="group" aria-label="Filter stories by category">
+              <!-- Rendered dynamically by js/main.js -->
+            </div>
+
+            <!-- Live Search Bar -->
+            <div class="search-container">
+              <span class="search-icon-wrap" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+              <input 
+                type="search" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Search stories, topics, authors..." 
+                aria-label="Search stories by keyword" 
+                autocomplete="off"
+              />
+              <button type="button" id="search-clear-btn" class="search-clear-btn" aria-label="Clear search input">&times;</button>
+            </div>
+          </div>
+
+          <!-- Dynamic search results count -->
+          <div id="search-results-count" class="search-results-info hidden"></div>
+        </div>
+      </section>
+
+      <!-- Latest Articles Grid Section -->
+      <section class="articles-section">
+        <div class="container">
+          <div class="section-header-row">
+            <h2 class="section-title">Latest Perspectives</h2>
+          </div>
+
+          <!-- Grid Container -->
+          <div class="articles-grid" id="articles-grid">
+            <!-- Rendered dynamically by js/main.js -->
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state-box hidden" id="articles-empty-state">
+            <div class="empty-state-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </div>
+            <h3 class="empty-state-title">No Stories Found</h3>
+            <p class="empty-state-desc">We couldn't find any articles matching your current search or category filter. Try clearing the search query or browse another category.</p>
+            <a href="create-blog.html" class="btn btn-primary btn-sm">Write a New Story</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top-grid">
+          <div class="footer-brand-col">
+            <a href="index.html" class="brand-logo footer-brand-logo">
+              <div class="brand-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <span>BlogSpace</span>
+            </a>
+            <p>
+              A clean, modern editorial publishing platform built with pure HTML5, CSS3, and Vanilla JavaScript. 
+              Designed for readability, craft, and independent thought.
+            </p>
+            <button type="button" class="btn btn-outline btn-sm text-muted" id="footer-reset-data-btn" title="Reset sample articles to default">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              <span>Restore Sample Posts</span>
+            </button>
+          </div>
+
+          <div>
+            <h4 class="footer-col-title">Navigation</h4>
+            <ul class="footer-links-list">
+              <li><a href="index.html" class="footer-link">Home Feed</a></li>
+              <li><a href="#explore" class="footer-link">Explore Topics</a></li>
+              <li><a href="dashboard.html" class="footer-link">Author Dashboard</a></li>
+              <li><a href="create-blog.html" class="footer-link">Publish Story</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="footer-col-title">Categories</h4>
+            <ul class="footer-links-list">
+              <li><a href="#explore" class="footer-link">Technology</a></li>
+              <li><a href="#explore" class="footer-link">Design Systems</a></li>
+              <li><a href="#explore" class="footer-link">Deep Work &amp; Focus</a></li>
+              <li><a href="#explore" class="footer-link">Culture &amp; Future</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-newsletter">
+            <h4 class="footer-col-title">Weekly Digest</h4>
+            <p>Get the most insightful editorial articles hand-delivered to your inbox once a week.</p>
+            <form id="newsletter-form" class="newsletter-form">
+              <input type="email" id="newsletter-email" class="newsletter-input" placeholder="Enter your email" required aria-label="Email address for newsletter" />
+              <button type="submit" class="btn btn-primary btn-sm">Subscribe</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="footer-bottom-bar">
+          <div>&copy; 2026 BlogSpace. Designed &amp; Developed by Minhaz Fahim. All rights reserved.</div>
+          <div class="footer-social-icons">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="GitHub Repository">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="social-icon-link" aria-label="Twitter">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Main JS entry -->
+    <script type="module">
+      import { initHomePage } from '/js/main.js';
+      import { resetSeedData } from '/js/blog.js';
+
+      initHomePage();
+
+      document.getElementById('footer-reset-data-btn')?.addEventListener('click', () => {
+        if (confirm('Restore sample editorial articles? This will repopulate default stories.')) {
+          resetSeedData();
+          initHomePage();
+        }
+      });
+    </script>
+  </body>
+</html>

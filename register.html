@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account — BlogSpace</title>
+    <meta name="description" content="Join BlogSpace to publish your perspective and connect with curious readers worldwide." />
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/auth.css" />
+  </head>
+  <body class="auth-page-wrapper">
+    <!-- Header / Brand Link -->
+    <header class="auth-header">
+      <div class="container">
+        <a href="index.html" class="brand-logo">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <span>Blog<span class="brand-highlight">Space</span></span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Auth Container -->
+    <main class="auth-main-container">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h1 class="auth-card-title">Join BlogSpace</h1>
+          <p class="auth-card-subtitle">Begin sharing your ideas, stories, and research with the world.</p>
+        </div>
+
+        <!-- Dynamic Error Alert -->
+        <div id="auth-error-alert" class="auth-alert hidden" role="alert"></div>
+
+        <!-- Registration Form -->
+        <form id="register-form" novalidate>
+          <!-- Full Name Input -->
+          <div class="form-group">
+            <label for="name" class="form-label">Full Name</label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input 
+                type="text" 
+                id="name" 
+                name="name" 
+                class="form-input" 
+                placeholder="e.g. Maya Lin" 
+                required 
+                autocomplete="name" 
+              />
+            </div>
+          </div>
+
+          <!-- Email Input -->
+          <div class="form-group">
+            <label for="email" class="form-label">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="maya@example.com" 
+                required 
+                autocomplete="email" 
+              />
+            </div>
+          </div>
+
+          <!-- Password Input -->
+          <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                placeholder="Create a password (min 6 characters)" 
+                required 
+                autocomplete="new-password" 
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn" 
+                data-target="password" 
+                aria-label="Show password"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+
+            <!-- Password Strength Meter -->
+            <div class="password-strength-container" aria-live="polite">
+              <div class="strength-bar-track">
+                <div class="strength-bar-fill" id="strength-bar"></div>
+              </div>
+              <div class="strength-status-row">
+                <span>Strength: <span class="strength-text" id="strength-text"></span></span>
+                <span>Minimum 6 characters</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirm Password Input -->
+          <div class="form-group">
+            <label for="confirm-password" class="form-label">Confirm Password</label>
+            <div class="input-wrap">
+              <span class="input-icon-left" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input 
+                type="password" 
+                id="confirm-password" 
+                name="confirm-password" 
+                class="form-input" 
+                placeholder="Re-enter your password" 
+                required 
+                autocomplete="new-password" 
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn" 
+                data-target="confirm-password" 
+                aria-label="Show confirm password"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Terms Checkbox -->
+          <div class="form-group">
+            <label class="checkbox-label" for="terms-agree">
+              <input type="checkbox" id="terms-agree" name="terms-agree" required />
+              <span>I agree to the <a href="javascript:void(0)" class="forgot-password-link" id="terms-conditions-link">Terms &amp; Conditions</a> and Privacy Policy</span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary btn-auth-submit">
+            <span>Create Account</span>
+          </button>
+        </form>
+
+        <div class="auth-card-footer">
+          <span>Already have an account?</span>
+          <a href="login.html">Sign in here</a>
+        </div>
+      </div>
+    </main>
+
+    <div class="auth-disclaimer">
+      Client-side LocalStorage persistence &bull; Designed &amp; Developed by Minhaz Fahim
+    </div>
+
+    <script type="module">
+      import { initRegisterPage } from '/js/auth.js';
+      initRegisterPage();
+    </script>
+  </body>
+</html>

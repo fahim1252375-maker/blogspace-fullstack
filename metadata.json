@@ -1,0 +1,6 @@
+{
+  "name": "BlogSpace - Modern Editorial Blogging Platform",
+  "description": "A modern, responsive, full-featured blog application built with semantic HTML5, modern CSS3, and vanilla JavaScript with LocalStorage persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

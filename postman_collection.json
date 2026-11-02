@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "a9876543-210f-4e89-b123-blogspace2026",
+    "name": "BlogSpace Backend REST API (Module 02)",
+    "description": "Complete Postman testing collection for BlogSpace Node.js, Express, and MongoDB Backend (Authentication, JWT Security, and Blog Management).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "blogId",
+      "value": "66f1234567890abcdef13001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Verify that the Express server and database gateway are online and healthy."
+      },
+      "response": []
+    },
+    {
+      "name": "2. User Registration",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.token) {",
+              "    pm.collectionVariables.set('authToken', res.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Samiha Anwar\",\n  \"email\": \"samiha@blogspace.io\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new user account with hashed password and return a JWT token."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Duplicate Email Registration (Negative Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alex Mercer Clone\",\n  \"email\": \"alex@blogspace.io\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Expected status 400 Bad Request — Rejects duplicate email registration."
+      },
+      "response": []
+    },
+    {
+      "name": "4. User Login (Successful)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.token) {",
+              "    pm.collectionVariables.set('authToken', res.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alex@blogspace.io\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Authenticate user, verify bcrypt hash, and return signed JWT."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Invalid Login (Negative Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alex@blogspace.io\",\n  \"password\": \"wrongPassword999\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Expected status 401 Unauthorized — Rejects invalid password."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Create Blog (Authenticated)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && (res.data.id || res.data._id)) {",
+              "    pm.collectionVariables.set('blogId', res.data.id || res.data._id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Scalable Microservices with Node.js in 2026\",\n  \"category\": \"Technology\",\n  \"description\": \"A deep architectural analysis of backend API gateways, concurrency, and caching.\",\n  \"content\": \"## Architectural Overview\\n\\nModern distributed applications demand decoupled microservices, resilient fallback layers, and strict token-based authentication.\\n\\n> Simplicity drives resilience at scale.\",\n  \"status\": \"published\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs"]
+        },
+        "description": "Expected status 201 Created — Saves blog in database associated with authenticated user."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Create Blog (Without Token - Negative Test)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Unauthorized Blog Post\",\n  \"content\": \"This request has no Bearer token.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs"]
+        },
+        "description": "Expected status 401 Unauthorized — Blocks unauthenticated creation."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Get All Blogs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs"]
+        },
+        "description": "Retrieve list of all published blogs with author credentials."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Get Single Blog By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs/{{blogId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs", "{{blogId}}"]
+        },
+        "description": "Retrieve full story by ID and increment reader view counter."
+      },
+      "response": []
+    },
+    {
+      "name": "10. Update Blog (Authenticated Author)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Scalable Microservices with Node.js in 2026 (Revised Edition)\",\n  \"status\": \"published\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs/{{blogId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs", "{{blogId}}"]
+        },
+        "description": "Expected status 200 OK — Modifies title, slug, and status."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Unauthorized Blog Modification (Negative Test)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer invalid_or_other_user_token_here"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Hacked Title\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs/{{blogId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs", "{{blogId}}"]
+        },
+        "description": "Expected status 401 Unauthorized or 403 Forbidden — Blocks unauthorized modification."
+      },
+      "response": []
+    },
+    {
+      "name": "12. Delete Blog (Authenticated Author)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/blogs/{{blogId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "blogs", "{{blogId}}"]
+        },
+        "description": "Expected status 200 OK — Removes the story permanently."
+      },
+      "response": []
+    }
+  ]
+}
