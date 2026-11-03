@@ -76,10 +76,15 @@ export async function syncMyPostsFromApi() {
   if (!token) throw new Error('Please sign in to load your articles.');
 
   const res = await fetch('/api/blogs/mine', {
+    cache: 'no-store',
     headers: { Authorization: `Bearer ${token}` },
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.success || !Array.isArray(json.data)) {
+    if (res.status === 401 || res.status === 403) {
+      removeAuthToken();
+      setCurrentUser(null);
+    }
     throw new Error(json.message || `Unable to load your posts (${res.status})`);
   }
 
@@ -547,6 +552,7 @@ export async function getAuthenticatedUser() {
   }
 
   const response = await fetch('/api/auth/me', {
+    cache: 'no-store',
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await response.json().catch(() => ({}));
