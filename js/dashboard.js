@@ -5,7 +5,7 @@
  */
 
 import {
-  getAllPosts,
+  getMyPosts,
   deletePost,
   togglePostStatus,
   getCurrentUser,
@@ -55,7 +55,6 @@ export async function initDashboard() {
   }
 
   setupDashboardUI(currentUser);
-  renderDashboard();
 }
 
 function setupDashboardUI(user) {
@@ -197,9 +196,8 @@ export function renderDashboard() {
   const currentUser = getCurrentUser();
   if (!currentUser) return;
 
-  const allPosts = getAllPosts();
-  // Filter for current user's posts
-  const userPosts = allPosts.filter((p) => p.authorId === currentUser.id);
+  // Private posts are loaded only from the authenticated user's isolated cache.
+  const userPosts = getMyPosts();
 
   // Compute statistics
   const totalCount = userPosts.length;
