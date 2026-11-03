@@ -7,6 +7,7 @@
 // Storage Keys
 export const STORAGE_KEYS = {
   POSTS: 'blogspace_posts',
+  MY_POSTS: 'blogspace_my_posts',
   USERS: 'blogspace_users',
   CURRENT_USER: 'blogspace_current_user',
   TOKEN: 'blogspace_token',
@@ -18,18 +19,22 @@ export const STORAGE_KEYS = {
  */
 export function getAuthToken() {
   try {
-    return localStorage.getItem(STORAGE_KEYS.TOKEN) || '';
+    return localStorage.getItem(STORAGE_KEYS.TOKEN)
+      || sessionStorage.getItem(STORAGE_KEYS.TOKEN)
+      || '';
   } catch (e) {
     return '';
   }
 }
 
-export function setAuthToken(token) {
+// Keep sessions in the current tab by default. "Remember me" opts into persistence.
+export function setAuthToken(token, rememberMe = false) {
   try {
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.TOKEN);
     if (token) {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem(STORAGE_KEYS.TOKEN, token);
     }
   } catch (e) {
     console.error('Failed to set auth token:', e);
@@ -39,6 +44,7 @@ export function setAuthToken(token) {
 export function removeAuthToken() {
   try {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.TOKEN);
   } catch (e) {}
 }
 
@@ -78,8 +84,8 @@ export async function syncMyPostsFromApi() {
     throw new Error(json.message || `Unable to load your posts (${res.status})`);
   }
 
-  // This cache is used by the authenticated dashboard and edit screen.
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(json.data));
+  // Keep private author data separate from the public article cache.
+  localStorage.setItem(STORAGE_KEYS.MY_POSTS, JSON.stringify(json.data));
   return json.data;
 }
 
@@ -330,12 +336,35 @@ export function getAllPosts() {
 }
 
 /**
- * Retrieve a single post by ID
+ * Retrieve the authenticated user's cached posts. Never use the public cache
+ * for private dashboard or editor data.
+ */
+export function getMyPosts() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.MY_POSTS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Failed to parse private posts from LocalStorage:', e);
+    return [];
+  }
+}
+
+/**
+ * Retrieve a single public post by ID.
  */
 export function getPostById(id) {
   if (!id) return null;
-  const posts = getAllPosts();
-  return posts.find((p) => p && p.id === id) || null;
+  return getAllPosts().find((p) => p && (p.id === id || p._id === id)) || null;
+}
+
+/**
+ * Retrieve a single post from the authenticated user's private cache.
+ */
+export function getMyPostById(id) {
+  if (!id) return null;
+  return getMyPosts().find((p) => p && (p.id === id || p._id === id)) || null;
 }
 
 /**
@@ -393,7 +422,7 @@ export async function savePost(postData) {
     throw new Error(data.message || `Unable to save story (${response.status}).`);
   }
 
-  const posts = getAllPosts();
+  const posts = getMyPosts();
   if (isUpdate) {
     const index = posts.findIndex((post) => post.id === postData.id || post._id === postData.id);
     if (index !== -1) posts[index] = data.data;
@@ -401,7 +430,7 @@ export async function savePost(postData) {
   } else {
     posts.unshift(data.data);
   }
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+  localStorage.setItem(STORAGE_KEYS.MY_POSTS, JSON.stringify(posts));
   return data.data;
 }
 
@@ -421,8 +450,8 @@ export async function deletePost(id) {
     throw new Error(data.message || `Unable to delete story (${response.status}).`);
   }
 
-  const posts = getAllPosts().filter((post) => post.id !== id && post._id !== id);
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+  const posts = getMyPosts().filter((post) => post.id !== id && post._id !== id);
+  localStorage.setItem(STORAGE_KEYS.MY_POSTS, JSON.stringify(posts));
   return true;
 }
 
@@ -433,7 +462,7 @@ export async function togglePostStatus(id) {
   const token = getAuthToken();
   if (!token) throw new Error('Please sign in before changing a story.');
 
-  const posts = getAllPosts();
+  const posts = getMyPosts();
   const post = posts.find((item) => item.id === id || item._id === id);
   if (!post) return null;
 
@@ -453,7 +482,7 @@ export async function togglePostStatus(id) {
 
   const index = posts.findIndex((item) => item.id === id || item._id === id);
   if (index !== -1) posts[index] = data.data;
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+  localStorage.setItem(STORAGE_KEYS.MY_POSTS, JSON.stringify(posts));
   return data.data;
 }
 
@@ -538,6 +567,7 @@ export async function getAuthenticatedUser() {
   const token = getAuthToken();
   if (!token) {
     setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
     return null;
   }
 
@@ -549,12 +579,17 @@ export async function getAuthenticatedUser() {
   if (response.status === 401 || response.status === 403) {
     removeAuthToken();
     setCurrentUser(null);
+    localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
     return null;
   }
   if (!response.ok || !data.success || !data.user) {
     throw new Error(data.message || 'Unable to verify your session.');
   }
 
+  const previousUser = getCurrentUser();
+  if (previousUser?.id && previousUser.id !== data.user.id) {
+    localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
+  }
   setCurrentUser(data.user);
   return data.user;
 }
@@ -617,6 +652,7 @@ export function setCurrentUser(user) {
 export function logoutUser() {
   removeAuthToken();
   localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+  localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
   showToast('You have been logged out.', 'info');
   setTimeout(() => {
     window.location.href = 'login.html';
@@ -788,14 +824,32 @@ export const IMAGE_PRESETS = [
 /**
  * Initialize Blog Editor (Create & Edit Mode)
  */
-export function initBlogEditor() {
+export async function initBlogEditor() {
   initStorage();
-  updateNavAuthUI();
 
-  const currentUser = getCurrentUser();
+  let currentUser = null;
+  try {
+    currentUser = await getAuthenticatedUser();
+  } catch (error) {
+    console.error('[BlogSpace Editor] Session verification failed:', error);
+    showToast('Unable to verify your session. Please sign in again.', 'error');
+    window.location.replace('login.html');
+    return;
+  }
+
   if (!currentUser) {
+    updateNavAuthUI();
     showToast('Please sign in to write or edit stories.', 'warning');
-    setTimeout(() => (window.location.href = 'login.html'), 1000);
+    window.location.replace('login.html');
+    return;
+  }
+
+  updateNavAuthUI();
+  try {
+    await syncMyPostsFromApi();
+  } catch (error) {
+    console.error('[BlogSpace Editor] Unable to load your articles:', error);
+    showToast('Your articles could not be loaded. Please refresh and try again.', 'error');
     return;
   }
 
@@ -825,7 +879,7 @@ export function initBlogEditor() {
 
   // Load existing post if editing
   if (editId) {
-    currentPost = getPostById(editId);
+    currentPost = getMyPostById(editId);
     if (currentPost) {
       // Author ownership check
       if (currentPost.authorId && currentPost.authorId !== currentUser.id) {
