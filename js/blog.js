@@ -68,7 +68,7 @@ export async function syncPostsFromApi() {
  */
 export async function syncMyPostsFromApi() {
   const token = getAuthToken();
-  if (!token) return getAllPosts();
+  if (!token) throw new Error('Please sign in to load your articles.');
 
   const res = await fetch('/api/blogs/mine', {
     headers: { Authorization: `Bearer ${token}` },
@@ -367,101 +367,42 @@ export function slugify(text) {
  * Save (create or update) a post — Synchronizes with Backend REST API and LocalStorage
  */
 export async function savePost(postData) {
-  const posts = getAllPosts();
-  const currentUser = getCurrentUser() || DEFAULT_USERS[0];
-  const now = new Date().toISOString();
   const token = getAuthToken();
+  if (!token) throw new Error('Please sign in before creating or editing a story.');
 
-  // Try saving to backend API
-  if (token) {
-    const isUpdate = Boolean(postData.id);
-    const url = isUpdate ? `/api/blogs/${postData.id}` : '/api/blogs';
-    const method = isUpdate ? 'PUT' : 'POST';
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: postData.title,
-          description: postData.description,
-          content: postData.content,
-          category: postData.category,
-          coverImage: postData.coverImage,
-          status: postData.status,
-        }),
-      });
-
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || `Server returned error (${res.status}) while saving blog`);
-      }
-
-      const apiBlog = json.data;
-      if (isUpdate) {
-        const index = posts.findIndex((p) => p.id === postData.id || p._id === postData.id);
-        if (index !== -1) posts[index] = apiBlog;
-      } else {
-        posts.unshift(apiBlog);
-      }
-      localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-      return apiBlog;
-    } catch (err) {
-      console.error('[BlogSpace] API save error:', err.message);
-      throw err;
-    }
+  const isUpdate = Boolean(postData.id);
+  const url = isUpdate ? `/api/blogs/${postData.id}` : '/api/blogs';
+  const method = isUpdate ? 'PUT' : 'POST';
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      title: postData.title,
+      description: postData.description,
+      content: postData.content,
+      category: postData.category,
+      coverImage: postData.coverImage,
+      status: postData.status,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.success || !data.data) {
+    throw new Error(data.message || `Unable to save story (${response.status}).`);
   }
 
-  // Local fallback save (only when no token is present)
-  if (postData.id) {
-    // Update existing
-    const index = posts.findIndex((p) => p.id === postData.id || p._id === postData.id);
-    if (index !== -1) {
-      const updatedPost = {
-        ...posts[index],
-        title: postData.title,
-        slug: slugify(postData.title),
-        description: postData.description,
-        content: postData.content,
-        category: postData.category,
-        coverImage: postData.coverImage || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80',
-        status: postData.status || posts[index].status,
-        readingTime: calculateReadingTime(postData.content),
-        updatedAt: now,
-      };
-      posts[index] = updatedPost;
-      localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-      return updatedPost;
-    }
+  const posts = getAllPosts();
+  if (isUpdate) {
+    const index = posts.findIndex((post) => post.id === postData.id || post._id === postData.id);
+    if (index !== -1) posts[index] = data.data;
+    else posts.unshift(data.data);
+  } else {
+    posts.unshift(data.data);
   }
-
-  // Create new post locally
-  const newPost = {
-    id: 'post-' + Date.now(),
-    title: postData.title,
-    slug: slugify(postData.title),
-    description: postData.description,
-    content: postData.content,
-    category: postData.category || 'General',
-    coverImage: postData.coverImage || 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80',
-    authorId: currentUser.id,
-    authorName: currentUser.name,
-    authorAvatar: currentUser.avatar,
-    status: postData.status || 'published',
-    createdAt: now,
-    updatedAt: now,
-    readingTime: calculateReadingTime(postData.content),
-    views: 0,
-    likes: 0,
-  };
-
-  posts.unshift(newPost);
   localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-  return newPost;
+  return data.data;
 }
 
 /**
@@ -469,22 +410,19 @@ export async function savePost(postData) {
  */
 export async function deletePost(id) {
   const token = getAuthToken();
-  if (token) {
-    const res = await fetch(`/api/blogs/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || !json.success) {
-      throw new Error(json.message || `Failed to delete story (${res.status})`);
-    }
+  if (!token) throw new Error('Please sign in before deleting a story.');
+
+  const response = await fetch(`/api/blogs/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || `Unable to delete story (${response.status}).`);
   }
 
-  const posts = getAllPosts();
-  const filtered = posts.filter((p) => p.id !== id && p._id !== id);
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(filtered));
+  const posts = getAllPosts().filter((post) => post.id !== id && post._id !== id);
+  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
   return true;
 }
 
@@ -492,38 +430,31 @@ export async function deletePost(id) {
  * Toggle post status between published and draft — Synchronizes with Backend REST API
  */
 export async function togglePostStatus(id) {
+  const token = getAuthToken();
+  if (!token) throw new Error('Please sign in before changing a story.');
+
   const posts = getAllPosts();
-  const index = posts.findIndex((p) => p.id === id || p._id === id);
-  if (index !== -1) {
-    const nextStatus = posts[index].status === 'published' ? 'draft' : 'published';
-    const token = getAuthToken();
+  const post = posts.find((item) => item.id === id || item._id === id);
+  if (!post) return null;
 
-    if (token) {
-      const res = await fetch(`/api/blogs/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || `Failed to update status (${res.status})`);
-      }
-      if (json.data) {
-        posts[index] = json.data;
-        localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-        return json.data;
-      }
-    }
-
-    posts[index].status = nextStatus;
-    posts[index].updatedAt = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
-    return posts[index];
+  const nextStatus = post.status === 'published' ? 'draft' : 'published';
+  const response = await fetch(`/api/blogs/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ status: nextStatus }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.success || !data.data) {
+    throw new Error(data.message || `Unable to update story (${response.status}).`);
   }
-  return null;
+
+  const index = posts.findIndex((item) => item.id === id || item._id === id);
+  if (index !== -1) posts[index] = data.data;
+  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+  return data.data;
 }
 
 /**
@@ -597,6 +528,35 @@ export function getCurrentUser() {
   } catch (e) {
     return null;
   }
+}
+
+/**
+ * Verify the saved JWT with the backend and refresh the local profile.
+ * A cached LocalStorage user alone is never treated as an authenticated session.
+ */
+export async function getAuthenticatedUser() {
+  const token = getAuthToken();
+  if (!token) {
+    setCurrentUser(null);
+    return null;
+  }
+
+  const response = await fetch('/api/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 || response.status === 403) {
+    removeAuthToken();
+    setCurrentUser(null);
+    return null;
+  }
+  if (!response.ok || !data.success || !data.user) {
+    throw new Error(data.message || 'Unable to verify your session.');
+  }
+
+  setCurrentUser(data.user);
+  return data.user;
 }
 
 /**
