@@ -9,13 +9,11 @@ import {
   deletePost,
   togglePostStatus,
   getCurrentUser,
-  setCurrentUser,
-  DEFAULT_USERS,
+  getAuthenticatedUser,
   logoutUser,
   formatDate,
   showToast,
   escapeHtml,
-  syncPostsFromApi,
   syncMyPostsFromApi,
 } from './blog.js';
 
@@ -27,37 +25,37 @@ let postToDeleteId = null;
  * Initialize Dashboard
  */
 export async function initDashboard() {
-  const currentUser = getCurrentUser();
+  let currentUser = null;
 
-  // If not logged in, prompt user or auto-login as demo user
+  try {
+    currentUser = await getAuthenticatedUser();
+  } catch (error) {
+    console.error('[BlogSpace Dashboard] Session verification failed:', error);
+    showToast('Unable to verify your session. Please sign in again.', 'error');
+    window.location.replace('login.html');
+    return;
+  }
+
   if (!currentUser) {
-    const authPrompt = document.getElementById('auth-prompt-modal');
-    if (authPrompt) {
-      authPrompt.classList.remove('hidden');
-      const demoBtn = document.getElementById('prompt-demo-login-btn');
-      if (demoBtn) {
-        demoBtn.addEventListener('click', () => {
-          setCurrentUser(DEFAULT_USERS[0]);
-          authPrompt.classList.add('hidden');
-          setupDashboardUI(DEFAULT_USERS[0]);
-        });
-      }
-      return;
-    } else {
-      window.location.href = 'login.html';
+    window.location.replace('login.html');
+    return;
+  }
+
+  // Do not render cached/private content until the backend confirms ownership.
+  try {
+    await syncMyPostsFromApi();
+  } catch (error) {
+    console.error('[BlogSpace Dashboard] Unable to load account articles:', error);
+    if (/401|403|authorized|token/i.test(error.message || '')) {
+      window.location.replace('login.html');
       return;
     }
+    showToast('Your articles could not be loaded. Please refresh and try again.', 'error');
+    return;
   }
 
   setupDashboardUI(currentUser);
-
-  // Sync latest posts from backend API & re-render
-  try {
-    await syncMyPostsFromApi();
-    renderDashboard();
-  } catch (err) {
-    console.warn('[BlogSpace Dashboard] Using cached posts:', err);
-  }
+  renderDashboard();
 }
 
 function setupDashboardUI(user) {
