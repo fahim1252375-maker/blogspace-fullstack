@@ -23,6 +23,10 @@ export const protect = async (
 ): Promise<void> => {
   let token: string | undefined;
 
+  // Authenticated responses contain account-specific data and must never be cached.
+  res.setHeader('Cache-Control', 'no-store, private');
+  res.setHeader('Vary', 'Authorization');
+
   const authorization = req.headers.authorization || '';
   const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
 
