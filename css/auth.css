@@ -309,3 +309,28 @@
     padding: 2rem 1.25rem;
   }
 }
+
+
+/* Responsive and accessible auth polish */
+.auth-main-container { width: 100%; }
+.auth-card { min-width: 0; }
+.form-input { min-width: 0; }
+.password-toggle-btn { flex: 0 0 auto; }
+.auth-card-footer { line-height: 1.7; }
+.auth-disclaimer { padding-inline: 1rem; }
+
+@media (max-width: 600px) {
+  .auth-header { padding: 1rem 0; }
+  .auth-main-container { padding: 1.25rem .875rem 2rem; align-items: flex-start; }
+  .auth-card { max-width: 100%; padding: 2rem 1.25rem; border-radius: 1rem; }
+  .auth-card-title { font-size: clamp(1.5rem, 7vw, 1.875rem); }
+  .auth-card-subtitle { font-size: .875rem; line-height: 1.6; }
+  .form-options-row { flex-wrap: wrap; gap: .75rem; }
+  .btn-auth-submit { width: 100%; min-height: 2.9rem; }
+  .auth-disclaimer { margin-top: .75rem; padding-bottom: 1rem; }
+}
+
+@media (max-width: 360px) {
+  .auth-card { padding-inline: 1rem; }
+  .form-label { font-size: .85rem; }
+}
