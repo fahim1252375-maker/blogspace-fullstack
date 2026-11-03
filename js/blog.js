@@ -640,8 +640,23 @@ export async function verifyPassword(inputPassword, storedCredential) {
 export function setCurrentUser(user) {
   if (!user) {
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
     return;
   }
+
+  let previousUser = null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    previousUser = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    previousUser = null;
+  }
+
+  // Never carry one author's private cached articles into another account.
+  if (previousUser?.id && user.id && previousUser.id !== user.id) {
+    localStorage.removeItem(STORAGE_KEYS.MY_POSTS);
+  }
+
   const { password, ...safeUser } = user;
   localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(safeUser));
 }
