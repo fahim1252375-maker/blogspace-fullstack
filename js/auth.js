@@ -1,7 +1,7 @@
 /**
- * BlogSpace - Authentication Module (Simulated Frontend Auth)
- * Handles User Registration, Login, Form Validations, Password Toggles,
- * Strength Meter, and Session Storage.
+ * BlogSpace - Backend JWT Authentication Module
+ * Handles API-based user registration and login, form validation,
+ * password visibility, password strength feedback, and JWT sessions.
  */
 
 import {
