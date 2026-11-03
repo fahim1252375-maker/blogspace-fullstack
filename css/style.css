@@ -1649,3 +1649,5 @@ button, .btn { touch-action: manipulation; }
     transition-duration: .01ms !important;
   }
 }
+
+body.mobile-menu-open { overflow: hidden; }
