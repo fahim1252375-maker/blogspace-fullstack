@@ -105,9 +105,11 @@ export function initLoginPage() {
     document.querySelectorAll('.form-group').forEach((g) => g.classList.remove('has-error'));
   }
 
+  let loginSubmitting = false;
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (loginSubmitting) return;
       clearErrors();
 
       const email = emailInput?.value.trim() || '';
@@ -137,6 +139,10 @@ export function initLoginPage() {
         return;
       }
 
+      loginSubmitting = true;
+      const loginSubmitBtn = loginForm.querySelector('button[type="submit"]');
+      if (loginSubmitBtn) loginSubmitBtn.disabled = true;
+
       // Authenticate only through the backend JWT API. Never fall back to LocalStorage users.
       try {
         const response = await fetch('/api/auth/login', {
@@ -148,14 +154,18 @@ export function initLoginPage() {
 
         if (!response.ok || !data.success || !data.user || !data.token) {
           showError(data.message || 'Invalid email or password.');
+          loginSubmitting = false;
+          if (loginSubmitBtn) loginSubmitBtn.disabled = false;
           return;
         }
 
-        setAuthToken(data.token);
+        setAuthToken(data.token, Boolean(rememberCheckbox?.checked));
         setCurrentUser(data.user);
       } catch (apiErr) {
         console.error('[BlogSpace Auth] Login API unavailable:', apiErr);
         showError('Unable to connect to the authentication server. Please try again when the server is available.');
+        loginSubmitting = false;
+        if (loginSubmitBtn) loginSubmitBtn.disabled = false;
         return;
       }
 
@@ -167,9 +177,8 @@ export function initLoginPage() {
       }
 
       // Submit feedback button animation
-      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      const submitBtn = loginSubmitBtn;
       if (submitBtn) {
-        submitBtn.disabled = true;
         submitBtn.innerHTML = `
           <svg class="spinner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
           <span>Signing in...</span>
@@ -245,9 +254,11 @@ export function initRegisterPage() {
     });
   }
 
+  let registerSubmitting = false;
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (registerSubmitting) return;
       clearErrors();
 
       const name = nameInput?.value.trim() || '';
@@ -291,6 +302,10 @@ export function initRegisterPage() {
         return;
       }
 
+      registerSubmitting = true;
+      const registerSubmitBtn = registerForm.querySelector('button[type="submit"]');
+      if (registerSubmitBtn) registerSubmitBtn.disabled = true;
+
       // Create accounts only through the backend; browser storage is never an account database.
       let registeredUser;
       try {
@@ -304,20 +319,24 @@ export function initRegisterPage() {
         if (!response.ok || !data.success || !data.user || !data.token) {
           showError(data.message || 'Registration failed. Please try again.');
           emailInput?.closest('.form-group')?.classList.add('has-error');
+          registerSubmitting = false;
+          if (registerSubmitBtn) registerSubmitBtn.disabled = false;
           return;
         }
 
         registeredUser = data.user;
-        setAuthToken(data.token);
+        setAuthToken(data.token, false);
       } catch (apiErr) {
         console.error('[BlogSpace Auth] Registration API unavailable:', apiErr);
         showError('Unable to connect to the registration server. Please try again when the server is available.');
+        registerSubmitting = false;
+        if (registerSubmitBtn) registerSubmitBtn.disabled = false;
         return;
       }
 
       setCurrentUser(registeredUser);
 
-      const submitBtn = registerForm.querySelector('button[type="submit"]');
+      const submitBtn = registerSubmitBtn;
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = `
