@@ -8,7 +8,6 @@ import {
   setCurrentUser,
   setAuthToken,
   showToast,
-  escapeHtml,
 } from './blog.js';
 
 /**
@@ -114,8 +113,6 @@ export function initLoginPage() {
 
       const email = emailInput?.value.trim() || '';
       const password = passwordInput?.value || '';
-
-      let hasError = false;
 
       // Validation
       if (!email) {
