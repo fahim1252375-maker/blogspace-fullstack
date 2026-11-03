@@ -175,18 +175,6 @@ function setupDashboardEvents() {
     }
   });
 
-  // Quick Reset Demo Posts
-  const resetDemoBtn = document.getElementById('reset-demo-posts-btn');
-  if (resetDemoBtn) {
-    resetDemoBtn.addEventListener('click', () => {
-      if (confirm('Restore sample editorial articles? This will repopulate standard posts.')) {
-        import('./blog.js').then((module) => {
-          module.resetSeedData();
-          renderDashboard();
-        });
-      }
-    });
-  }
 }
 
 /**
