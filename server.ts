@@ -40,15 +40,24 @@ app.use((_req, res, next) => {
 
 // Strict CORS Allow-List Configuration
 const rawFrontendUrls = process.env.FRONTEND_URL || 'http://localhost:3000';
-const allowedOrigins = rawFrontendUrls
-  .split(',')
-  .map((url) => url.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  ...rawFrontendUrls.split(',').map((url) => url.trim()).filter(Boolean),
+  // Render provides this URL automatically for deployed web services.
+  ...(process.env.RENDER_EXTERNAL_URL ? [process.env.RENDER_EXTERNAL_URL] : []),
+];
 
-// CORS Origin Interceptor: Returns clean 403 JSON response for blocked origins
+// CORS Origin Interceptor: allow configured frontends and same-origin requests.
+// Same-origin support is important when the frontend and API are served by this
+// single Express service (the recommended production deployment for BlogSpace).
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (!origin || allowedOrigins.includes(origin)) {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const requestProtocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)
+    ?.split(',')[0]
+    ?.trim() || req.protocol;
+  const requestOrigin = req.headers.host ? `${requestProtocol}://${req.headers.host}` : '';
+
+  if (!origin || allowedOrigins.includes(origin) || origin === requestOrigin) {
     return next();
   }
   res.status(403).json({
