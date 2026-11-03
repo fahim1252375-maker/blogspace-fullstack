@@ -5,20 +5,11 @@
  */
 
 import {
-  STORAGE_KEYS,
-  DEFAULT_USERS,
-  initStorage,
-  getCurrentUser,
   setCurrentUser,
   setAuthToken,
-  hashPassword,
-  verifyPassword,
   showToast,
   escapeHtml,
 } from './blog.js';
-
-// Initialize storage upon script execution
-initStorage();
 
 /**
  * Checks email regex format
@@ -80,7 +71,6 @@ export function initLoginPage() {
   const passwordInput = document.getElementById('password');
   const rememberCheckbox = document.getElementById('remember-me');
   const errorAlert = document.getElementById('auth-error-alert');
-  const demoLoginBtn = document.getElementById('demo-login-btn');
 
   // Pre-fill remembered email if available
   const rememberedEmail = localStorage.getItem('blogspace_remembered_email');
@@ -89,23 +79,12 @@ export function initLoginPage() {
     if (rememberCheckbox) rememberCheckbox.checked = true;
   }
 
-  // Quick Demo fill button
-  if (demoLoginBtn) {
-    demoLoginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (emailInput) emailInput.value = 'alex@blogspace.io';
-      if (passwordInput) passwordInput.value = 'password123';
-      clearErrors();
-      showToast('Demo credentials filled! Click "Sign In" or press Enter.', 'info');
-    });
-  }
-
   // Forgot password notice handler
   const forgotPasswordLink = document.getElementById('forgot-password-link');
   if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', (e) => {
       e.preventDefault();
-      showToast('Demo notice: For this prototype, sign in with alex@blogspace.io / password123 or click "Auto-fill test credentials".', 'info', 4500);
+      showToast('Password reset is not available yet. Please contact the site administrator for help.', 'info', 4500);
     });
   }
 
@@ -158,55 +137,26 @@ export function initLoginPage() {
         return;
       }
 
-      // Connect to Backend REST API: POST /api/auth/login
-      let foundUser = null;
-      let loginSuccess = false;
-
+      // Authenticate only through the backend JWT API. Never fall back to LocalStorage users.
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
-        if (response.ok && data.success && data.user) {
-          loginSuccess = true;
-          foundUser = data.user;
-          if (data.token) {
-            setAuthToken(data.token);
-          }
-        } else {
+        if (!response.ok || !data.success || !data.user || !data.token) {
           showError(data.message || 'Invalid email or password.');
           return;
         }
+
+        setAuthToken(data.token);
+        setCurrentUser(data.user);
       } catch (apiErr) {
-        console.warn('[BlogSpace Auth] Backend API offline, verifying with local credentials:', apiErr);
-        // Fallback to local user verify
-        let users = DEFAULT_USERS;
-        try {
-          const rawUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-          const parsed = rawUsers ? JSON.parse(rawUsers) : null;
-          if (Array.isArray(parsed)) users = parsed;
-        } catch (err) {
-          users = DEFAULT_USERS;
-        }
-
-        for (const u of users) {
-          if (u && u.email && u.email.toLowerCase() === email.toLowerCase()) {
-            const isMatch = await verifyPassword(password, u.password);
-            if (isMatch) {
-              foundUser = u;
-              loginSuccess = true;
-              break;
-            }
-          }
-        }
-
-        if (!loginSuccess || !foundUser) {
-          showError('Invalid email or password. Please verify your credentials or use the demo login.');
-          return;
-        }
+        console.error('[BlogSpace Auth] Login API unavailable:', apiErr);
+        showError('Unable to connect to the authentication server. Please try again when the server is available.');
+        return;
       }
 
       // Remember me logic
@@ -215,9 +165,6 @@ export function initLoginPage() {
       } else {
         localStorage.removeItem('blogspace_remembered_email');
       }
-
-      // Save user session
-      setCurrentUser(foundUser);
 
       // Submit feedback button animation
       const submitBtn = loginForm.querySelector('button[type="submit"]');
@@ -229,7 +176,7 @@ export function initLoginPage() {
         `;
       }
 
-      showToast(`Welcome back, ${foundUser.name}!`, 'success');
+      showToast('Login successful. Welcome back!', 'success');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
       }, 700);
@@ -344,72 +291,28 @@ export function initRegisterPage() {
         return;
       }
 
-      // Connect to Backend REST API: POST /api/auth/register
-      let registeredUser = null;
-      let registrationSuccess = false;
-
+      // Create accounts only through the backend; browser storage is never an account database.
+      let registeredUser;
       try {
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password }),
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
-        if (response.ok && data.success && data.user) {
-          registrationSuccess = true;
-          registeredUser = data.user;
-          if (data.token) {
-            setAuthToken(data.token);
-          }
-        } else {
+        if (!response.ok || !data.success || !data.user || !data.token) {
           showError(data.message || 'Registration failed. Please try again.');
           emailInput?.closest('.form-group')?.classList.add('has-error');
           return;
         }
+
+        registeredUser = data.user;
+        setAuthToken(data.token);
       } catch (apiErr) {
-        console.warn('[BlogSpace Auth] Backend API offline, saving user locally:', apiErr);
-        // Check duplicate email locally
-        let users = DEFAULT_USERS;
-        try {
-          const raw = localStorage.getItem(STORAGE_KEYS.USERS);
-          const parsed = raw ? JSON.parse(raw) : null;
-          if (Array.isArray(parsed)) users = parsed;
-        } catch (err) {
-          users = DEFAULT_USERS;
-        }
-
-        const duplicate = users.some((u) => u && u.email && u.email.toLowerCase() === email.toLowerCase());
-        if (duplicate) {
-          showError('An account with this email already exists. Please sign in or use another email.');
-          emailInput?.closest('.form-group')?.classList.add('has-error');
-          emailInput?.focus();
-          return;
-        }
-
-        // Create new user with hashed password
-        const avatars = [
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80',
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80',
-          'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=160&q=80',
-          'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=160&q=80',
-        ];
-        const randomAvatar = avatars[Math.floor(Math.random() * avatars.length)];
-        const hashedPassword = await hashPassword(password);
-
-        registeredUser = {
-          id: 'user-' + Date.now(),
-          name,
-          email,
-          password: hashedPassword,
-          avatar: randomAvatar,
-          bio: 'Writer and reader on BlogSpace.',
-          joinedDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        };
-
-        users.push(registeredUser);
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-        registrationSuccess = true;
+        console.error('[BlogSpace Auth] Registration API unavailable:', apiErr);
+        showError('Unable to connect to the registration server. Please try again when the server is available.');
+        return;
       }
 
       setCurrentUser(registeredUser);
