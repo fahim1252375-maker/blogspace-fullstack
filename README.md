@@ -2,7 +2,7 @@
 
 **BlogSpace** is a full-stack editorial blogging platform. Readers can explore published stories, while registered authors can create, edit, and manage their own posts through a protected dashboard.
 
-> **Deployment status:** The Render service is configured, and the production frontend build succeeds. The application is not live yet because the Render environment is missing the required `MONGODB_URI`. Add the secret in Render (instructions below), then verify the health endpoint before sharing the deployment URL.
+> **Deployment status:** BlogSpace is deployed as a full-stack Node.js service on Render. The production frontend and REST API are served from the same origin, with MongoDB Atlas configured for persistent storage. Check the live health endpoint before testing or sharing the application.
 
 ## Features
 
@@ -165,9 +165,12 @@ This repository includes a `render.yaml` Blueprint for a single-service full-sta
 
 - Service: `blogspace-fullstack`
 - Region: Singapore
+- Plan: Free web service
+- Deployment branch: `main` (automatic deploys enabled)
 - Service URL: [https://blogspace-fullstack.onrender.com](https://blogspace-fullstack.onrender.com)
-- Dashboard: [Render service dashboard](https://dashboard.render.com/web/srv-dbkmv2rbc2fs739qgheg)
-- Current blocker: `MONGODB_URI` has not yet been added to the Render environment.
+- Health endpoint: [https://blogspace-fullstack.onrender.com/api/health](https://blogspace-fullstack.onrender.com/api/health)
+
+The service configuration is managed in the [Render dashboard](https://dashboard.render.com/web/srv-dbkmv2rbc2fs739qgheg). Do not put database credentials or JWT secrets in this README or in frontend code.
 
 Render injects `RENDER_EXTERNAL_URL`; the server accepts that origin automatically. If you later attach a separate frontend domain, add its exact origin to `FRONTEND_URL`.
 
@@ -191,7 +194,7 @@ Check that there is no horizontal page overflow, clipped text, overlapping contr
 - JWTs are stored in browser storage (session storage by default, local storage when Remember Me is selected). This is convenient for a learning project but remains exposed to JavaScript running on the page. A hardened production design should consider Secure, HttpOnly, SameSite cookies and appropriate CSRF protection.
 - Password reset is not implemented.
 - Keep secrets in environment variables and rotate any credential that may have been exposed.
-- Do not treat the app as production-ready until the deployment health check and end-to-end flows have been verified.
+- The hosted service and database connection have been configured; re-run the health check and end-to-end flows after each deployment or environment change.
 
 ## Available Scripts
 
