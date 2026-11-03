@@ -8,7 +8,6 @@
 export const STORAGE_KEYS = {
   POSTS: 'blogspace_posts',
   MY_POSTS: 'blogspace_my_posts',
-  USERS: 'blogspace_users',
   CURRENT_USER: 'blogspace_current_user',
   TOKEN: 'blogspace_token',
   LIKES: 'blogspace_likes',
@@ -88,28 +87,6 @@ export async function syncMyPostsFromApi() {
   localStorage.setItem(STORAGE_KEYS.MY_POSTS, JSON.stringify(json.data));
   return json.data;
 }
-
-// Default seed users
-export const DEFAULT_USERS = [
-  {
-    id: 'user-alex',
-    name: 'Alex Mercer',
-    email: 'alex@blogspace.io',
-    password: 'password123', // Demo purpose only
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80',
-    bio: 'Lead Frontend Architect & Design Systems Lead. Passionate about typography, accessibility, and modern web standards.',
-    joinedDate: 'October 2025',
-  },
-  {
-    id: 'user-elena',
-    name: 'Elena Rostova',
-    email: 'elena@blogspace.io',
-    password: 'password123',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=160&q=80',
-    bio: 'Editorial writer exploring the intersection of creative work, cognitive psychology, and daily habits.',
-    joinedDate: 'November 2025',
-  },
-];
 
 // Rich default seed articles
 export const DEFAULT_POSTS = [
@@ -298,9 +275,8 @@ export function initStorage() {
     if (!localStorage.getItem(STORAGE_KEYS.POSTS)) {
       localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(DEFAULT_POSTS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
-    }
+    // Remove legacy demo credentials; authentication is backend-only.
+    localStorage.removeItem('blogspace_users');
     // Note: Guests remain guests until they explicitly sign in or choose demo mode.
     if (!localStorage.getItem(STORAGE_KEYS.LIKES)) {
       localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify([]));
@@ -315,7 +291,6 @@ export function initStorage() {
  */
 export function resetSeedData() {
   localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(DEFAULT_POSTS));
-  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
   showToast('Sample posts restored successfully!', 'success');
 }
 
