@@ -53,14 +53,6 @@ export const registerUser = async (
       return;
     }
 
-    if (!password || password.length < 6) {
-      res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long',
-      });
-      return;
-    }
-
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check database state
@@ -163,10 +155,16 @@ export const loginUser = async (
   try {
     const { email, password } = req.body;
 
-    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
+    if (
+      typeof email !== 'string' ||
+      !email.trim() ||
+      typeof password !== 'string' ||
+      !password ||
+      Buffer.byteLength(password, 'utf8') > 72
+    ) {
       res.status(400).json({
         success: false,
-        message: 'Please provide both email and password',
+        message: 'Please provide a valid email address and password',
       });
       return;
     }
