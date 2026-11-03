@@ -20,23 +20,31 @@ export const registerUser = async (
     const { name, email, password } = req.body;
 
     // Validation
-    if (!name || !name.trim()) {
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 60) {
       res.status(400).json({
         success: false,
-        message: 'Name is required',
+        message: 'Name is required and must be 60 characters or fewer',
       });
       return;
     }
 
-    if (!email || !email.trim()) {
+    if (typeof email !== 'string' || !email.trim() || email.trim().length > 254) {
       res.status(400).json({
         success: false,
-        message: 'Email address is required',
+        message: 'A valid email address of 254 characters or fewer is required',
       });
       return;
     }
 
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
+    if (typeof password !== 'string' || password.length < 6 || Buffer.byteLength(password, 'utf8') > 72) {
+      res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters and no more than 72 UTF-8 bytes',
+      });
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
     if (!emailRegex.test(email.trim())) {
       res.status(400).json({
         success: false,
@@ -129,7 +137,15 @@ export const registerUser = async (
         message: 'Database service unavailable: MongoDB Atlas is required and not connected.',
       });
     }
-  } catch (error) {
+  } catch (error: any) {
+    // A unique-index collision can still occur when two registrations race.
+    if (error?.code === 11000) {
+      res.status(409).json({
+        success: false,
+        message: 'An account with this email address already exists',
+      });
+      return;
+    }
     next(error);
   }
 };
@@ -147,7 +163,7 @@ export const loginUser = async (
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
       res.status(400).json({
         success: false,
         message: 'Please provide both email and password',
