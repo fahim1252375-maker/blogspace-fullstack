@@ -1,7 +1,7 @@
 {
   "name": "blogspace",
   "version": "1.0.0",
-  "description": "A modern, responsive editorial blog application built with semantic HTML5, modern CSS3, and Vanilla JavaScript with LocalStorage persistence.",
+  "description": "A responsive full-stack editorial blogging platform built with HTML, CSS, JavaScript, Node.js, Express, MongoDB, and JWT authentication.",
   "author": "Minhaz Fahim <minhazfahim442@gmail.com>",
   "license": "MIT",
   "type": "module",
@@ -43,5 +43,8 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }
