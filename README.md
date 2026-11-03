@@ -1,38 +1,41 @@
 # BlogSpace
 
-A full-stack editorial blogging application where readers can explore published stories and registered authors can create, manage, and publish their own articles.
+**BlogSpace** is a full-stack editorial blogging platform. Readers can explore published stories, while registered authors can create, edit, and manage their own posts through a protected dashboard.
+
+> **Deployment status:** The Render service is configured, and the production frontend build succeeds. The application is not live yet because the Render environment is missing the required `MONGODB_URI`. Add the secret in Render (instructions below), then verify the health endpoint before sharing the deployment URL.
 
 ## Features
 
-- Responsive multi-page frontend for Home, Login, Register, Dashboard, and Story Editor.
-- Public feed that displays published articles.
-- Search and category filtering.
-- JWT-based registration and login with bcrypt password hashing.
-- Protected author dashboard and profile.
-- Author-specific post management with ownership checks for update and delete operations.
+- Responsive public homepage with story feed, search, and category filters.
+- Account registration and login.
+- JWT-protected author dashboard and story editor.
+- Create, read, update, and delete blog posts.
+- Author ownership checks for post updates and deletion.
 - MongoDB Atlas persistence through Mongoose.
-- API health endpoint at `/api/health`.
+- Password hashing with bcrypt.
+- API health endpoint with database connectivity status.
+- Single-origin deployment: Express serves the frontend build and API.
 
-## Technology
+## Technology Stack
 
-| Area | Stack |
+| Layer | Technology |
 |---|---|
 | Frontend | HTML5, CSS3, Vanilla JavaScript (ES modules) |
 | Backend | Node.js, Express.js, TypeScript, TSX |
 | Database | MongoDB Atlas, Mongoose |
-| Authentication | JWT, bcryptjs |
-| Build | Vite |
-| Tests | Node.js test runner, TypeScript type-check |
+| Authentication | JSON Web Tokens (JWT), bcryptjs |
+| Build tool | Vite |
+| Tests | Node.js test runner, TypeScript compiler |
 
-## Application Pages
+## Pages
 
-| Page | Path | Access |
+| Page | Route | Access |
 |---|---|---|
-| Home / Explore | `/` or `/index.html` | Public |
+| Explore stories | `/` or `/index.html` | Public |
 | Login | `/login.html` | Public |
 | Register | `/register.html` | Public |
-| Author Dashboard | `/dashboard.html` | Authenticated |
-| Story Editor | `/create-blog.html` | Authenticated |
+| Author dashboard | `/dashboard.html` | Login required |
+| Story editor | `/create-blog.html` | Login required |
 
 ## Project Structure
 
@@ -41,8 +44,8 @@ A full-stack editorial blogging application where readers can explore published 
 ├── backend/
 │   ├── config/       # MongoDB connection and data-store configuration
 │   ├── controllers/  # Authentication and blog business logic
-│   ├── middleware/   # JWT protection and error handling
-│   ├── models/       # Mongoose User and Blog models
+│   ├── middleware/  # Authentication and error handling
+│   ├── models/       # User and Blog Mongoose models
 │   └── routes/       # Authentication and blog API routes
 ├── css/              # Global, authentication, and dashboard styles
 ├── js/               # Frontend modules and API integration
@@ -54,44 +57,45 @@ A full-stack editorial blogging application where readers can explore published 
 ├── create-blog.html
 ├── server.ts         # Express API and production static-file server
 ├── vite.config.ts
-└── render.yaml       # Render deployment blueprint
+├── render.yaml       # Render Blueprint
+└── .env.example      # Environment variable template
 ```
 
 ## Run Locally
 
-### 1. Requirements
+### Requirements
 
 - Node.js 22 or newer
 - npm
-- A MongoDB Atlas database (or another compatible MongoDB deployment)
+- A MongoDB Atlas database or compatible MongoDB instance
 
-### 2. Install dependencies
+### Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configure environment variables
+### Configure environment variables
 
-Copy the example file:
+Create your local environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Set the values in your local `.env` file:
+Set these values in `.env`:
 
 | Variable | Required | Description |
 |---|---|---|
-| `PORT` | No | Local server port; defaults to `3000`. Render supplies this automatically. |
-| `NODE_ENV` | No | Use `development` locally and `production` when deployed. |
+| `PORT` | No | Local server port; defaults to `3000`. Render provides this automatically. |
+| `NODE_ENV` | Recommended | Set to `development` locally and `production` on Render. |
 | `MONGODB_URI` | Yes | MongoDB connection string for the BlogSpace database. |
 | `JWT_SECRET` | Yes | Long, random secret used to sign authentication tokens. |
 | `FRONTEND_URL` | No | Comma-separated allowed frontend origins when using a separate frontend domain. |
 
-Never commit your real `.env` file or share database credentials or JWT secrets.
+**Security:** Never commit `.env`, publish database credentials, or put secrets in frontend JavaScript. Use a dedicated MongoDB database user with only the permissions required by this application.
 
-### 4. Start the development server
+### Start the development server
 
 ```bash
 npm run dev
@@ -101,80 +105,105 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## API Reference
 
-All API routes are served by the same application origin.
+All API routes are served from the same origin.
 
-| Method | Endpoint | Access | Purpose |
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
 | GET | `/api/health` | Public | Server and database health |
-| POST | `/api/auth/register` | Public | Create an account |
-| POST | `/api/auth/login` | Public | Authenticate and receive a JWT |
-| GET | `/api/auth/me` | JWT required | Get the authenticated user's profile |
+| POST | `/api/auth/register` | Public | Register an account |
+| POST | `/api/auth/login` | Public | Log in and receive a JWT |
+| GET | `/api/auth/me` | JWT required | Get the current user's profile |
 | GET | `/api/blogs` | Public | List published posts |
-| GET | `/api/blogs/mine` | JWT required | List the authenticated author's posts |
+| GET | `/api/blogs/mine` | JWT required | List the current author's posts |
 | GET | `/api/blogs/:id` | Public | Read a published post |
 | POST | `/api/blogs` | JWT required | Create a post |
 | PUT | `/api/blogs/:id` | JWT + ownership required | Update an owned post |
 | DELETE | `/api/blogs/:id` | JWT + ownership required | Delete an owned post |
 
-Authenticated API requests use the `Authorization: Bearer <token>` header.
+Send authenticated requests with:
 
-## Production Build
+```http
+Authorization: Bearer <token>
+```
 
-Create the optimized frontend bundle:
+## Tests and Production Build
+
+Run the available checks before release:
 
 ```bash
+npm run lint
+npm test
 npm run build
 ```
 
-Start the production server:
+Start the production server locally:
 
 ```bash
 NODE_ENV=production npm start
 ```
 
-The Express server serves the Vite output from `dist/` and the REST API from the same origin.
+The Express server serves the optimized Vite output from `dist/` and the REST API from the same origin.
 
 ## Deploy to Render
 
 This repository includes a `render.yaml` Blueprint for a single-service full-stack deployment.
 
 1. Push the repository to GitHub.
-2. In Render, choose **New + → Blueprint** and connect this repository.
-3. Render reads `render.yaml` and creates the web service.
-4. Add the required environment variables when prompted:
+2. In Render, select **New + → Blueprint** and connect this repository.
+3. Render reads `render.yaml` and configures the web service.
+4. Open the service's **Environment** page and add:
    - `MONGODB_URI`: your MongoDB Atlas connection string.
-   - `JWT_SECRET`: use a long, random value; Render can generate one for the Blueprint.
-5. In MongoDB Atlas Network Access, allow connections from Render. Render's outbound IPs can change; for a simple student deployment, Atlas may require an IP access rule that permits `0.0.0.0/0`. Use a dedicated database user with only the permissions this app needs, and never expose its password.
-6. Wait for the first deployment to finish.
-7. Open the Render service URL and append `/api/health`. The response should report `status: "healthy"` and `database.connected: true`.
-8. Verify registration, login, profile, dashboard, post creation, and logout on the deployed URL.
+   - `JWT_SECRET`: a long random secret. Render can generate one when using the Blueprint.
+   - `NODE_ENV`: `production` (set by the Blueprint).
+5. In MongoDB Atlas **Network Access**, allow the Render service to connect. Use the narrowest practical IP rule. If your Render plan does not provide stable outbound IPs, a broad rule may be required for a student/demo deployment; understand the security trade-off and use a least-privilege database user.
+6. Save the environment variables and wait for Render to redeploy.
+7. Open the health endpoint: [https://blogspace-fullstack.onrender.com/api/health](https://blogspace-fullstack.onrender.com/api/health).
+8. Confirm that the response reports a healthy server and `database.connected: true`.
+9. Test registration, login, profile, dashboard, post creation, editing, deletion, and logout before sharing the app.
 
-Render injects the public service URL into `RENDER_EXTERNAL_URL`; the server accepts that origin automatically. If you later attach a separate frontend domain, add its exact origin to `FRONTEND_URL`.
+### Current Render service
 
-**Deployment URL:** Add the live Render URL here after the first successful deployment.
+- Service: `blogspace-fullstack`
+- Region: Singapore
+- Service URL: [https://blogspace-fullstack.onrender.com](https://blogspace-fullstack.onrender.com)
+- Dashboard: [Render service dashboard](https://dashboard.render.com/web/srv-dbkmv2rbc2fs739qgheg)
+- Current blocker: `MONGODB_URI` has not yet been added to the Render environment.
 
-## Responsive Layout
+Render injects `RENDER_EXTERNAL_URL`; the server accepts that origin automatically. If you later attach a separate frontend domain, add its exact origin to `FRONTEND_URL`.
 
-The stylesheet includes desktop, tablet, and mobile breakpoints. Check the Home, Login, Register, Dashboard, and Story Editor pages at narrow mobile widths before considering the release finished.
+## Responsive UI Verification
 
-## Security Notes
+The stylesheets define desktop, tablet, and mobile breakpoints. Before release, verify these pages at narrow mobile widths (around 360–390 px), tablet width, and desktop width:
+
+- Home: navigation, hero, filters, search, article cards, and footer.
+- Login and Register: form width, labels, validation messages, and button sizing.
+- Dashboard: navigation, post list, action buttons, and empty state.
+- Story Editor: title/content fields, category controls, and publish actions.
+- Reader: long titles, images, article content, and modal scrolling.
+
+Check that there is no horizontal page overflow, clipped text, overlapping controls, or inaccessible navigation.
+
+## Security Notes and Known Limitations
 
 - Passwords are hashed with bcryptjs; plaintext passwords are not stored.
-- Private API routes require a valid JWT.
+- Protected API routes require a valid JWT.
 - Blog update and delete operations enforce author ownership on the server.
-- JWTs are currently stored in browser storage (session storage by default, local storage when Remember Me is selected). This is convenient for this project but remains exposed to JavaScript running on the page. A production-hardened authentication design should consider Secure, HttpOnly, SameSite cookies and appropriate CSRF protection.
-- Password reset is not implemented yet.
-- Keep all secrets in environment variables and rotate any credential that has been exposed.
+- JWTs are stored in browser storage (session storage by default, local storage when Remember Me is selected). This is convenient for a learning project but remains exposed to JavaScript running on the page. A hardened production design should consider Secure, HttpOnly, SameSite cookies and appropriate CSRF protection.
+- Password reset is not implemented.
+- Keep secrets in environment variables and rotate any credential that may have been exposed.
+- Do not treat the app as production-ready until the deployment health check and end-to-end flows have been verified.
 
-## Project Scripts
+## Available Scripts
 
-| Command | Description |
+| Command | Purpose |
 |---|---|
-| `npm run dev` | Start the local development server |
-| `npm run build` | Build the frontend for production |
+| `npm run dev` | Start the development server |
 | `npm start` | Start the Express server |
+| `npm run build` | Create the production frontend build |
+| `npm run preview` | Preview the Vite build |
 | `npm run lint` | Run the TypeScript type-check |
 | `npm test` | Run the unit test suite |
+| `npm run clean` | Remove generated build output |
 
 ---
 
