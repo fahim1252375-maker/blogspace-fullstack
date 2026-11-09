@@ -110,6 +110,12 @@ A render.yaml Blueprint is included for a Render web service. It defines the Nod
 
 AI tools may be used as supporting aids for brainstorming, explaining unfamiliar concepts, debugging, and drafting documentation. The project author is responsible for reviewing, adapting, understanding, and testing all published changes. AI suggestions are not considered verified until checked against the actual code and relevant tests.
 
+## Repository Guidelines
+
+- [Security Policy](SECURITY.md) — how to report a suspected vulnerability safely.
+- [Contributing Guide](CONTRIBUTING.md) — local setup, validation, and contribution expectations.
+- [Pull Request Template](.github/pull_request_template.md) — checklist for proposed changes.
+
 ---
 
 Built as a full-stack learning and portfolio project by MD. Minhazur Rahman Fahim.
