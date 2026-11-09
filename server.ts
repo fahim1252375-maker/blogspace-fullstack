@@ -38,7 +38,7 @@ app.set('trust proxy', trustProxyHops);
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const HOST = '0.0.0.0';
 
-// Basic Security Headers (Equivalent to lightweight Helmet)
+// Baseline security headers; review CSP separately before enabling it for the app's inline assets.
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
