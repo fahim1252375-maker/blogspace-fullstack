@@ -4,6 +4,25 @@
  * post CRUD operations, and cross-page utility functions.
  */
 
+// Install once to replace inline image onerror attributes with a CSP-safe listener.
+let imageFallbacksInstalled = false;
+
+export function installImageFallbacks() {
+  if (imageFallbacksInstalled || typeof document === "undefined") return;
+  imageFallbacksInstalled = true;
+
+  document.addEventListener("error", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+
+    const fallback = target.dataset.fallback;
+    if (!fallback || target.dataset.fallbackUsed === "true") return;
+
+    target.dataset.fallbackUsed = "true";
+    target.src = fallback;
+  }, true);
+}
+
 // Storage Keys
 export const STORAGE_KEYS = {
   POSTS: 'blogspace_posts',
