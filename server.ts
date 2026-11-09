@@ -2,9 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
-import { connectDB, isDbConnected, isInMemoryFallbackActive, maskMongoUri } from './backend/config/db.ts';
+import { connectDB, isDbConnected, isInMemoryFallbackActive } from './backend/config/db.ts';
 import authRoutes from './backend/routes/authRoutes.ts';
 import blogRoutes from './backend/routes/blogRoutes.ts';
 import { notFound, errorHandler } from './backend/middleware/errorMiddleware.ts';
@@ -27,14 +26,24 @@ if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Trust only the explicitly configured number of reverse-proxy hops.
+// Set TRUST_PROXY_HOPS=1 when deployed behind one trusted proxy; keep 0 locally.
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 5) {
+  throw new Error('TRUST_PROXY_HOPS must be an integer between 0 and 5.');
+}
+app.set('trust proxy', trustProxyHops);
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const HOST = '0.0.0.0';
 
-// Basic Security Headers (Equivalent to lightweight Helmet)
+// Baseline security headers; review CSP separately before enabling it for the app's inline assets.
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
 
@@ -85,7 +94,7 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Health Check Endpoint — Reports truthful database connection state
+// Health Check Endpoint — expose operational status only, never database host or URI details.
 app.get('/api/health', (_req, res) => {
   const dbConnected = isDbConnected();
   const fallbackActive = isInMemoryFallbackActive();
@@ -94,45 +103,29 @@ app.get('/api/health', (_req, res) => {
     res.status(200).json({
       success: true,
       status: 'healthy',
-      message: 'BlogSpace API Gateway is healthy & connected to MongoDB Atlas',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        connected: true,
-        provider: 'MongoDB Atlas',
-        host: mongoose.connection.host || 'connected',
-        readyState: mongoose.connection.readyState,
-      },
+      database: { connected: true },
     });
-  } else if (fallbackActive) {
+    return;
+  }
+
+  if (fallbackActive) {
     res.status(200).json({
       success: true,
       status: 'degraded_in_memory_fallback',
-      message: 'BlogSpace API is running with explicit OPT-IN in-memory fallback (development mode only)',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        connected: false,
-        provider: 'In-Memory Store (ALLOW_IN_MEMORY_FALLBACK=true)',
-        readyState: mongoose.connection.readyState,
-      },
+      database: { connected: false },
+      storage: 'in-memory-development-only',
     });
-  } else {
-    // Unhealthy when MongoDB is required and not connected
-    res.status(503).json({
-      success: false,
-      status: 'unhealthy',
-      message: 'BlogSpace API is unhealthy: MongoDB is disconnected and required.',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        connected: false,
-        provider: 'none',
-        readyState: mongoose.connection.readyState,
-        config: maskMongoUri(process.env.MONGODB_URI),
-      },
-    });
+    return;
   }
+
+  res.status(503).json({
+    success: false,
+    status: 'unhealthy',
+    timestamp: new Date().toISOString(),
+    database: { connected: false },
+  });
 });
 
 // REST API Endpoints

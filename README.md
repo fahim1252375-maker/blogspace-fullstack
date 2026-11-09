@@ -47,6 +47,7 @@ Configure the values in .env:
 - JWT_SECRET — a long, random secret; never commit it
 - NODE_ENV — use development locally
 - FRONTEND_URL — allowed frontend origin(s), if the frontend is hosted separately
+- TRUST_PROXY_HOPS — set to the number of trusted reverse proxies in front of the app (for example, `1` behind one trusted proxy); use `0` for direct/local access
 
 Start the application:
 
@@ -69,9 +70,11 @@ This is a learning/portfolio application and should not be described as producti
 - Use a strong, unique JWT_SECRET stored only in the hosting provider's secret manager.
 - Keep .env and all credentials out of Git.
 - Review CORS origins and allow only the actual frontend origins.
-- Add authentication rate limiting and appropriate request validation.
+- Apply per-IP rate limits to registration and login endpoints (5 registrations / 10 login attempts per 15 minutes per process); use a shared store such as Redis before scaling to multiple app instances.
+- Configure `TRUST_PROXY_HOPS` to match the number of trusted reverse proxies so IP-based limits use the actual client IP.
+- Continue testing request validation and authorization boundaries.
 - Review token storage and consider Secure, HttpOnly, SameSite cookies with CSRF protection.
-- Ensure health endpoints expose only operational status, not database host or connection configuration.
+- Keep health endpoints limited to operational status; the API health response does not expose database host or connection configuration.
 - Configure secure HTTP headers and production logging without leaking secrets.
 - Add integration tests for authentication, authorization, and data ownership.
 - Restrict MongoDB network access to trusted sources rather than leaving broad access enabled.
