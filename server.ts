@@ -32,7 +32,7 @@ const app = express();
 
 try {
   const proxySetting = process.env.TRUST_PROXY_HOPS ?? process.env.TRUST_PROXY;
-  app.set("trust proxy", parseTrustProxy(proxySetting, Boolean(process.env.RENDER)));
+  app.set("trust proxy", parseTrustProxy(proxySetting, process.env.RENDER === 'true'));
 } catch (error) {
   console.error("[BlogSpace] FATAL: " + (error as Error).message);
   process.exit(1);
@@ -46,10 +46,20 @@ if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
 const HOST = "0.0.0.0";
 
 const rawFrontendUrls = process.env.FRONTEND_URL || "http://localhost:3000";
-const allowedOrigins = [
-  ...rawFrontendUrls.split(",").map((value) => value.trim()).filter(Boolean),
+const configuredOrigins = [
+  ...rawFrontendUrls.split(","),
   ...(process.env.RENDER_EXTERNAL_URL ? [process.env.RENDER_EXTERNAL_URL] : []),
 ];
+const allowedOrigins = configuredOrigins
+  .map((value) => {
+    try {
+      return new URL(value.trim()).origin;
+    } catch {
+      console.warn("[BlogSpace CORS] Ignoring an invalid FRONTEND_URL origin.");
+      return "";
+    }
+  })
+  .filter(Boolean);
 
 const cspDirectives = {
   defaultSrc: ["'self'"],
