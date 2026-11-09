@@ -40,11 +40,13 @@ const BlogSchema = new Schema<IBlog>(
     content: {
       type: String,
       required: [true, 'Please provide story content'],
+      maxlength: [50000, 'Content cannot exceed 50000 characters'],
     },
     category: {
       type: String,
       required: [true, 'Please select a category'],
       trim: true,
+      maxlength: [50, 'Category cannot exceed 50 characters'],
       default: 'General',
     },
     coverImage: {
