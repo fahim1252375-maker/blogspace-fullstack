@@ -1,13 +1,13 @@
-# BlogSpace — Full-Stack Blogging Platform
+# BlogSpace — Full-Stack Blogging Application
 
-A full-stack blogging application built to practice and demonstrate backend API development, authentication, database integration, and responsive frontend workflows.
+A full-stack blogging application built as a software-development learning and portfolio project. It combines a browser-based interface with a Node.js/Express API and MongoDB persistence.
 
-**Author:** MD. MINHAZUR RAHMAN FAHIM  
+**Author:** MD. Minhazur Rahman Fahim  
 **Repository:** https://github.com/fahim1252375-maker/blogspace-fullstack
 
 ## Overview
 
-BlogSpace lets readers browse published posts and registered authors manage their own content through a protected dashboard. The project combines a browser-based interface with a Node.js/Express API and MongoDB persistence.
+Readers can browse published posts, while registered authors can manage their own content through protected workflows. The project demonstrates API development, authentication, database integration, and frontend/backend coordination.
 
 ## Features
 
@@ -17,7 +17,7 @@ BlogSpace lets readers browse published posts and registered authors manage thei
 - Create, read, update, and delete blog posts
 - Server-side author-ownership checks for post updates and deletion
 - Password hashing with bcryptjs
-- MongoDB Atlas integration through Mongoose
+- MongoDB integration through Mongoose
 - API health endpoint
 - Environment-based configuration
 
@@ -25,67 +25,59 @@ BlogSpace lets readers browse published posts and registered authors manage thei
 
 | Area | Tools |
 |---|---|
-| Frontend | HTML5, CSS3, Vanilla JavaScript (ES modules) |
+| Frontend | HTML5, CSS3, Vanilla JavaScript |
 | Backend | Node.js, Express.js, TypeScript |
-| Database | MongoDB Atlas, Mongoose |
+| Database | MongoDB, Mongoose |
 | Authentication | JSON Web Tokens (JWT), bcryptjs |
 | Build | Vite |
-| Testing | Node.js test runner, TypeScript tooling |
-
-## Main Pages
-
-- Home / published posts
-- Login and registration
-- Author dashboard
-- Create and edit blog posts
+| Checks | TypeScript, Node.js test runner |
 
 ## Run Locally
 
-**Requirements:** Node.js, npm, and a MongoDB database.
+**Requirements:** Node.js 22 or later, npm, and a MongoDB database.
 
-```bash
-git clone https://github.com/fahim1252375-maker/blogspace-fullstack.git
-cd blogspace-fullstack
-npm install
-cp .env.example .env
-```
+    git clone https://github.com/fahim1252375-maker/blogspace-fullstack.git
+    cd blogspace-fullstack
+    npm ci
+    cp .env.example .env
 
-Add the required values to `.env`:
+Configure the values in .env:
 
-- `MONGODB_URI` — MongoDB connection string
-- `JWT_SECRET` — a long, random signing secret
-- `NODE_ENV` — use `development` locally
+- MONGODB_URI — MongoDB connection string
+- JWT_SECRET — a long, random secret; never commit it
+- NODE_ENV — use development locally
+- FRONTEND_URL — allowed frontend origin(s), if the frontend is hosted separately
 
-Then start the development server:
+Start the application:
 
-```bash
-npm run dev
-```
+    npm run dev
 
-Open the local URL printed by the development server.
+Open the local URL printed by the server.
 
 ## Available Checks
 
-```bash
-npm run lint
-npm test
-npm run build
-```
+    npm run lint
+    npm test
+    npm run build
 
-Run these checks in your local environment before treating a release as verified. Test-script configuration and deployment status should be confirmed against the current branch and hosting environment.
+The project checks have passed in the development workflow previously, but rerun them on the exact commit you intend to deploy.
 
-## Security Notes
+## Security and Deployment Scope
 
-- Passwords are hashed; plaintext passwords should never be stored.
-- Protected API routes use JWT authentication.
-- Update and delete operations check post ownership on the server.
-- The current browser-token approach is suitable for a learning/demo project but needs further hardening before production use. Consider Secure, HttpOnly, SameSite cookies with appropriate CSRF protection.
-- Never commit `.env`, database credentials, or JWT secrets.
+This is a learning/portfolio application and should not be described as production-hardened. Before handling real users or sensitive data, review and test at least the following:
 
-## Project Status
+- Use a strong, unique JWT_SECRET stored only in the hosting provider's secret manager.
+- Keep .env and all credentials out of Git.
+- Review CORS origins and allow only the actual frontend origins.
+- Add authentication rate limiting and appropriate request validation.
+- Review token storage and consider Secure, HttpOnly, SameSite cookies with CSRF protection.
+- Ensure health endpoints expose only operational status, not database host or connection configuration.
+- Configure secure HTTP headers and production logging without leaking secrets.
+- Add integration tests for authentication, authorization, and data ownership.
+- Restrict MongoDB network access to trusted sources rather than leaving broad access enabled.
 
-This is a portfolio and learning project. Features and deployment should be tested on the current commit before being described as production-ready. Password reset and other production-grade account-recovery controls are not implemented.
+Password reset, email verification, and other production-grade account recovery features are not currently documented as implemented.
 
 ---
 
-Built by **MD. MINHAZUR RAHMAN FAHIM**.
+Built as a full-stack learning and portfolio project.
