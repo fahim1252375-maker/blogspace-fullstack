@@ -12,6 +12,7 @@ const runRequest = (middleware: ReturnType<typeof createRateLimiter>, ip: string
 
   const req = { ip } as unknown as Request;
   const res = {
+    get statusCode() { return statusCode; },
     setHeader(name: string, value: string) {
       headers[name] = String(value);
       return this;
