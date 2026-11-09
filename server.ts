@@ -1,77 +1,99 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { connectDB, isDbConnected, isInMemoryFallbackActive } from './backend/config/db.ts';
-import authRoutes from './backend/routes/authRoutes.ts';
-import blogRoutes from './backend/routes/blogRoutes.ts';
-import { notFound, errorHandler } from './backend/middleware/errorMiddleware.ts';
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { connectDB, isDbConnected, isInMemoryFallbackActive } from "./backend/config/db.ts";
+import { assertJwtConfig } from "./backend/config/jwt.ts";
+import { parseTrustProxy } from "./backend/config/securityConfig.ts";
+import authRoutes from "./backend/routes/authRoutes.ts";
+import blogRoutes from "./backend/routes/blogRoutes.ts";
+import { notFound, errorHandler } from "./backend/middleware/errorMiddleware.ts";
 
-// 1. Load environment variables before doing anything else
 dotenv.config();
 
-// 2. Strict Security & Environment Guard
-if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
-  console.error('[BlogSpace Security] FATAL: JWT_SECRET environment variable is missing. Set a secure secret in environment panel.');
-  if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
-  }
+const isProduction = process.env.NODE_ENV === "production";
+
+try {
+  assertJwtConfig();
+} catch (error) {
+  console.error((error as Error).message);
+  process.exit(1);
 }
 
-if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
-  console.error('[BlogSpace] FATAL: MONGODB_URI environment variable is required in production.');
+if (isProduction && !process.env.MONGODB_URI?.trim()) {
+  console.error("[BlogSpace] FATAL: MONGODB_URI is required in production.");
   process.exit(1);
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Trust only the explicitly configured number of reverse-proxy hops.
-// Set TRUST_PROXY_HOPS=1 when deployed behind one trusted proxy; keep 0 locally.
-const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
-if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 5) {
-  throw new Error('TRUST_PROXY_HOPS must be an integer between 0 and 5.');
+try {
+  const proxySetting = process.env.TRUST_PROXY_HOPS ?? process.env.TRUST_PROXY;
+  app.set("trust proxy", parseTrustProxy(proxySetting, Boolean(process.env.RENDER)));
+} catch (error) {
+  console.error("[BlogSpace] FATAL: " + (error as Error).message);
+  process.exit(1);
 }
-app.set('trust proxy', trustProxyHops);
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-const HOST = '0.0.0.0';
+const PORT = Number(process.env.PORT ?? 3000);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  console.error("[BlogSpace] FATAL: PORT must be an integer between 1 and 65535.");
+  process.exit(1);
+}
+const HOST = "0.0.0.0";
 
-// Baseline security headers; review CSP separately before enabling it for the app's inline assets.
-app.use((_req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  next();
-});
-
-// Strict CORS Allow-List Configuration
-const rawFrontendUrls = process.env.FRONTEND_URL || 'http://localhost:3000';
+const rawFrontendUrls = process.env.FRONTEND_URL || "http://localhost:3000";
 const allowedOrigins = [
-  ...rawFrontendUrls.split(',').map((url) => url.trim()).filter(Boolean),
-  // Render provides this URL automatically for deployed web services.
+  ...rawFrontendUrls.split(",").map((value) => value.trim()).filter(Boolean),
   ...(process.env.RENDER_EXTERNAL_URL ? [process.env.RENDER_EXTERNAL_URL] : []),
 ];
 
-// CORS Origin Interceptor: allow configured frontends and same-origin requests.
-// Same-origin support is important when the frontend and API are served by this
-// single Express service (the recommended production deployment for BlogSpace).
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'"],
+  scriptSrcAttr: ["'none'"],
+  styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+  imgSrc: ["'self'", "data:", "https:"],
+  connectSrc: ["'self'"],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  frameAncestors: ["'self'"],
+};
+
+app.disable("x-powered-by");
+app.use(
+  helmet({
+    strictTransportSecurity: isProduction ? undefined : false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: isProduction
+      ? {
+          useDefaults: false,
+          reportOnly: process.env.CSP_ENFORCE !== "true",
+          directives: cspDirectives,
+        }
+      : false,
+  })
+);
+
+// Reject unapproved browser origins without reflecting the supplied Origin header.
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const requestProtocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)
-    ?.split(',')[0]
-    ?.trim() || req.protocol;
-  const requestOrigin = req.headers.host ? `${requestProtocol}://${req.headers.host}` : '';
+  const requestOrigin = req.get("host") ? req.protocol + "://" + req.get("host") : "";
 
   if (!origin || allowedOrigins.includes(origin) || origin === requestOrigin) {
     return next();
   }
+
+  console.warn("[BlogSpace CORS] Rejected origin:", JSON.stringify(origin));
   res.status(403).json({
     success: false,
-    message: `[BlogSpace CORS] Access denied: origin '${origin}' is not authorized in FRONTEND_URL allow-list.`,
+    message: "Access denied: this origin is not authorized.",
   });
 });
 
@@ -81,106 +103,82 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Request logging in development
-if (process.env.NODE_ENV !== 'production') {
+app.set("query parser", "simple");
+app.use(express.json({ limit: "100kb" }));
+app.use(express.urlencoded({ extended: false, limit: "10kb" }));
+
+if (!isProduction) {
   app.use((req, _res, next) => {
-    if (req.path.startsWith('/api')) {
-      console.log(`[API ${req.method}] ${req.path}`);
+    if (req.path.startsWith("/api")) {
+      console.log("[API " + req.method + "] " + req.path);
     }
     next();
   });
 }
 
-// Health Check Endpoint — expose operational status only, never database host or URI details.
-app.get('/api/health', (_req, res) => {
-  const dbConnected = isDbConnected();
-  const fallbackActive = isInMemoryFallbackActive();
+// Public health endpoint: return only operational status and timestamp.
+app.get("/api/health", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const timestamp = new Date().toISOString();
 
-  if (dbConnected) {
+  if (isDbConnected()) {
+    res.status(200).json({ success: true, status: "healthy", timestamp });
+    return;
+  }
+
+  if (isInMemoryFallbackActive()) {
     res.status(200).json({
       success: true,
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      database: { connected: true },
+      status: "degraded_in_memory_fallback",
+      timestamp,
     });
     return;
   }
 
-  if (fallbackActive) {
-    res.status(200).json({
-      success: true,
-      status: 'degraded_in_memory_fallback',
-      timestamp: new Date().toISOString(),
-      database: { connected: false },
-      storage: 'in-memory-development-only',
-    });
-    return;
-  }
-
-  res.status(503).json({
-    success: false,
-    status: 'unhealthy',
-    timestamp: new Date().toISOString(),
-    database: { connected: false },
-  });
+  res.status(503).json({ success: false, status: "unhealthy", timestamp });
 });
 
-// REST API Endpoints
-app.use('/api/auth', authRoutes);
-app.use('/api/blogs', blogRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/blogs", blogRoutes);
 
-// Server bootstrap function
-async function startServer() {
-  console.log('[BlogSpace] Initializing server and connecting to database...');
-
-  // Await MongoDB connection before accepting requests
+async function startServer(): Promise<void> {
+  console.log("[BlogSpace] Initializing server and connecting to database...");
   const isConnected = await connectDB();
 
-  if (!isConnected && process.env.NODE_ENV === 'production') {
-    console.error('[BlogSpace] FATAL: MongoDB connection could not be established in production. Halting startup.');
+  if (!isConnected && isProduction) {
+    console.error("[BlogSpace] FATAL: MongoDB connection failed in production.");
     process.exit(1);
   }
 
-  // Integration with Vite for MPA (Multi-Page HTML Application)
-  if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
+  if (!isProduction) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: 'mpa',
+      appType: "mpa",
     });
-    // Mount Vite dev server middlewares
     app.use(vite.middlewares);
   } else {
-    // In production, serve bundled static files
-    app.use(express.static(path.resolve(__dirname, 'dist')));
-
-    // Multi-page fallback routing
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api')) {
-        return next();
-      }
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    app.use(express.static(path.resolve(__dirname, "dist")));
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) return next();
+      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
     });
   }
 
-  // Error Handlers for API endpoints
   app.use(notFound);
   app.use(errorHandler);
 
   app.listen(PORT, HOST, () => {
-    console.log('\x1b[36m%s\x1b[0m', `--------------------------------------------------`);
-    console.log('\x1b[32m%s\x1b[0m', `🚀 BlogSpace Full-Stack Server running at: http://${HOST}:${PORT}`);
-    console.log('\x1b[36m%s\x1b[0m', `   Database:   ${isDbConnected() ? 'MongoDB Connected' : (isInMemoryFallbackActive() ? 'In-Memory (Opt-in)' : 'Disconnected')}`);
-    console.log('\x1b[36m%s\x1b[0m', `   REST API:   http://${HOST}:${PORT}/api/blogs`);
-    console.log('\x1b[36m%s\x1b[0m', `   Health:     http://${HOST}:${PORT}/api/health`);
-    console.log('\x1b[36m%s\x1b[0m', `--------------------------------------------------`);
+    console.log("[BlogSpace] Server listening on port " + PORT);
+    console.log("[BlogSpace] Database: " +
+      (isDbConnected() ? "MongoDB Connected" :
+        isInMemoryFallbackActive() ? "In-Memory (Opt-in)" : "Disconnected"));
+    console.log("[BlogSpace] Health endpoint: /api/health");
   });
 }
 
-startServer().catch((err) => {
-  console.error('[BlogSpace] Startup fatal error:', err);
+startServer().catch((error) => {
+  console.error("[BlogSpace] Startup fatal error:", error);
   process.exit(1);
 });
