@@ -47,6 +47,7 @@ Configure the values in .env:
 - JWT_SECRET — a long, random secret; never commit it
 - NODE_ENV — use development locally
 - FRONTEND_URL — allowed frontend origin(s), if the frontend is hosted separately
+- TRUST_PROXY_HOPS — set to the number of trusted reverse proxies in front of the app (for example, `1` behind one trusted proxy); use `0` for direct/local access
 
 Start the application:
 
