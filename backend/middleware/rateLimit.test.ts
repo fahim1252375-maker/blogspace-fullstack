@@ -9,7 +9,7 @@ const runRequest = (middleware: ReturnType<typeof createRateLimiter>, ip: string
   let responseBody: unknown;
   const headers: Record<string, string> = {};
 
-  const req = { ip } as Request;
+  const req = { ip } as unknown as Request;
   const res = {
     setHeader(name: string, value: string) {
       headers[name] = String(value);
