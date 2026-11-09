@@ -61,7 +61,22 @@ Open the local URL printed by the server.
     npm test
     npm run build
 
-The project checks have passed in the development workflow previously, but rerun them on the exact commit you intend to deploy.
+The project checks passed in the development workflow for the security update. Run them again on the exact checkout you intend to deploy.
+
+## Recent Engineering Work
+
+### Security hardening — November 9, 2026
+
+The security update was merged into `main` through [Pull Request #2](https://github.com/fahim1252375-maker/blogspace-fullstack/pull/2).
+
+- Added per-IP registration rate limiting: **5 attempts per 15 minutes**.
+- Added per-IP login rate limiting: **10 attempts per 15 minutes**.
+- Added tests for allowed requests, blocked requests, per-IP isolation, and invalid configuration.
+- Reduced information exposed by the public health endpoint; database host and connection details are not returned.
+- Added configurable trusted-proxy handling through `TRUST_PROXY_HOPS`.
+- Added baseline `Referrer-Policy` and `Permissions-Policy` response headers.
+
+**Implementation limitation:** The current rate limiter uses in-memory state and is scoped to one server process. A shared store such as Redis is needed before running multiple application instances if rate limits must be shared across them.
 
 ## Security and Deployment Scope
 
@@ -70,7 +85,7 @@ This is a learning/portfolio application and should not be described as producti
 - Use a strong, unique JWT_SECRET stored only in the hosting provider's secret manager.
 - Keep .env and all credentials out of Git.
 - Review CORS origins and allow only the actual frontend origins.
-- Apply per-IP rate limits to registration and login endpoints (5 registrations / 10 login attempts per 15 minutes per process); use a shared store such as Redis before scaling to multiple app instances.
+- Apply per-IP rate limits to registration and login endpoints; use a shared store such as Redis before scaling to multiple app instances.
 - Configure `TRUST_PROXY_HOPS` to match the number of trusted reverse proxies so IP-based limits use the actual client IP.
 - Continue testing request validation and authorization boundaries.
 - Review token storage and consider Secure, HttpOnly, SameSite cookies with CSRF protection.
@@ -80,6 +95,10 @@ This is a learning/portfolio application and should not be described as producti
 - Restrict MongoDB network access to trusted sources rather than leaving broad access enabled.
 
 Password reset, email verification, and other production-grade account recovery features are not currently documented as implemented.
+
+## Render Configuration
+
+A `render.yaml` Blueprint is included for a Render web service. It defines the Node.js build/start commands and `/api/health` health-check path. Set the MongoDB connection string in the service's secret environment variables before deployment. The presence of this configuration does not by itself mean that a production deployment is live or verified.
 
 ---
 
