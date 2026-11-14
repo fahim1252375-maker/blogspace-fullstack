@@ -16,91 +16,108 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const protect = async (
+const unauthorized = (res: Response, message: string): void => {
+  res.status(401).json({ success: false, message });
+};
+
+export interface AuthMiddlewareDependencies {
+  verifyToken: (token: string) => { id: string };
+  isDbConnected: () => boolean;
+  isInMemoryFallbackActive: () => boolean;
+  findUserById: (id: string) => Promise<any>;
+  findMemoryUserById: (id: string) => Promise<any>;
+}
+
+export const createProtectMiddleware = ({
+  verifyToken,
+  isDbConnected,
+  isInMemoryFallbackActive,
+  findUserById,
+  findMemoryUserById,
+}: AuthMiddlewareDependencies) => async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  let token: string | undefined;
-
-  // Authenticated responses contain account-specific data and must never be cached.
   res.setHeader('Cache-Control', 'no-store, private');
   res.setHeader('Vary', 'Authorization');
 
   const authorization = req.headers.authorization || '';
-  const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
+  const bearerMatch = authorization.match(/^Bearer\\s+(.+)$/i);
+  const token = bearerMatch?.[1].trim();
 
-  if (bearerMatch) {
-    try {
-      token = bearerMatch[1].trim();
+  if (!token) {
+    unauthorized(res, 'Not authorized, no Bearer token provided in Authorization header');
+    return;
+  }
 
-      if (!token) {
-        res.status(401).json({
-          success: false,
-          message: 'Not authorized, token missing in Authorization header',
-        });
+  let decoded: { id: string };
+  try {
+    decoded = verifyToken(token);
+    if (!decoded || typeof decoded.id !== 'string' || !decoded.id) {
+      unauthorized(res, 'Not authorized, invalid or expired authentication token');
+      return;
+    }
+  } catch (error: unknown) {
+    const errorName =
+      error && typeof error === 'object' && 'name' in error
+        ? String(error.name)
+        : '';
+    if (errorName === 'JsonWebTokenError' || errorName === 'TokenExpiredError') {
+      unauthorized(res, 'Not authorized, invalid or expired authentication token');
+      return;
+    }
+    next(error);
+    return;
+  }
+
+  try {
+    if (isDbConnected()) {
+      const foundUser = await findUserById(decoded.id);
+      if (!foundUser) {
+        unauthorized(res, 'User belonging to this token no longer exists');
         return;
       }
-
-      // Verify token with centralized JWT utility
-      const decoded = verifyToken(token);
-
-      if (isDbConnected()) {
-        const foundUser = await User.findById(decoded.id).select('-password');
-        if (!foundUser) {
-          res.status(401).json({
-            success: false,
-            message: 'User belonging to this token no longer exists in database',
-          });
-          return;
-        }
-        req.user = {
-          id: (foundUser._id as any).toString(),
-          _id: (foundUser._id as any).toString(),
-          name: foundUser.name,
-          email: foundUser.email,
-          avatar: foundUser.avatar,
-          bio: foundUser.bio,
-        };
-      } else if (isInMemoryFallbackActive()) {
-        const memoryUser = await inMemoryStore.findUserById(decoded.id);
-        if (!memoryUser) {
-          res.status(401).json({
-            success: false,
-            message: 'User belonging to this token no longer exists in store',
-          });
-          return;
-        }
-        req.user = {
-          id: memoryUser.id,
-          _id: memoryUser.id,
-          name: memoryUser.name,
-          email: memoryUser.email,
-          avatar: memoryUser.avatar,
-          bio: memoryUser.bio,
-        };
-      } else {
-        res.status(503).json({
-          success: false,
-          message: 'Database service unavailable: MongoDB Atlas connection is required.',
-        });
+      const userId = String(foundUser._id);
+      req.user = {
+        id: userId,
+        _id: userId,
+        name: foundUser.name,
+        email: foundUser.email,
+        avatar: foundUser.avatar,
+        bio: foundUser.bio,
+      };
+    } else if (isInMemoryFallbackActive()) {
+      const memoryUser = await findMemoryUserById(decoded.id);
+      if (!memoryUser) {
+        unauthorized(res, 'User belonging to this token no longer exists');
         return;
       }
-
-      next();
-    } catch (error: any) {
-      console.error('[BlogSpace Auth] Token verification error:', error?.message);
-      res.status(401).json({
+      req.user = {
+        id: memoryUser.id,
+        _id: memoryUser.id,
+        name: memoryUser.name,
+        email: memoryUser.email,
+        avatar: memoryUser.avatar,
+        bio: memoryUser.bio,
+      };
+    } else {
+      res.status(503).json({
         success: false,
-        message: 'Not authorized, invalid or expired authentication token',
+        message: 'Database service unavailable: MongoDB Atlas connection is required.',
       });
       return;
     }
-  } else {
-    res.status(401).json({
-      success: false,
-      message: 'Not authorized, no Bearer token provided in Authorization header',
-    });
-    return;
+    next();
+  } catch (error: unknown) {
+    next(error);
   }
 };
+
+export const protect = createProtectMiddleware({
+  verifyToken,
+  isDbConnected,
+  isInMemoryFallbackActive,
+  findUserById: async (id) => User.findById(id).select('-password'),
+  findMemoryUserById: (id) => inMemoryStore.findUserById(id),
+});
