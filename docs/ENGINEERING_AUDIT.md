@@ -55,13 +55,13 @@ The current `protect` middleware verifies the JWT and loads the user inside one 
 [PR #3 — fix(auth): preserve server errors during token authentication](https://github.com/fahim1252375-maker/blogspace-fullstack/pull/3) is open and mergeable, but its current branch contains:
 
 ```ts
-authorization.match(/^Bearer\\\\s+(.+)$/i)
+authorization.match(/^Bearer\s+(.+)$/i)
 ```
 
 That pattern matches a literal backslash followed by `s`, not the whitespace separator in an ordinary `Authorization: Bearer <token>` header. The intended pattern is:
 
 ```ts
-authorization.match(/^Bearer\\s+(.+)$/i)
+authorization.match(/^Bearer\s+(.+)$/i)
 ```
 
 The recorded GitHub Actions run for PR #3 completed installation and TypeScript checking, then failed during tests: **17 passed, 6 failed**. The six failures are in the new authentication middleware tests that exercise valid tokens, datastore failures, in-memory fallback, and unavailable storage. The frontend build was skipped after the test step failed.
