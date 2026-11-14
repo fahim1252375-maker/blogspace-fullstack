@@ -55,7 +55,7 @@ The current `protect` middleware verifies the JWT and loads the user inside one 
 [PR #3 — fix(auth): preserve server errors during token authentication](https://github.com/fahim1252375-maker/blogspace-fullstack/pull/3) is open and mergeable, but its current branch contains:
 
 ```ts
-authorization.match(/^Bearer\s+(.+)$/i)
+authorization.match(/^Bearer\\s+(.+)$/i)
 ```
 
 That pattern matches a literal backslash followed by `s`, not the whitespace separator in an ordinary `Authorization: Bearer <token>` header. The intended pattern is:
