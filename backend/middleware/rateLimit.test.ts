@@ -8,15 +8,21 @@ const runRequest = (middleware: ReturnType<typeof createRateLimiter>, ip: string
   let statusCode = 200;
   let responseBody: unknown;
   const headers: Record<string, string> = {};
+  let finishListener: (() => void) | undefined;
 
   const req = { ip } as unknown as Request;
   const res = {
+    get statusCode() { return statusCode; },
     setHeader(name: string, value: string) {
       headers[name] = String(value);
       return this;
     },
     status(code: number) {
       statusCode = code;
+      return this;
+    },
+    once(event: string, listener: () => void) {
+      if (event === "finish") finishListener = listener;
       return this;
     },
     json(body: unknown) {
@@ -29,7 +35,13 @@ const runRequest = (middleware: ReturnType<typeof createRateLimiter>, ip: string
     nextCalled = true;
   });
 
-  return { nextCalled, statusCode, responseBody, headers };
+  return {
+    nextCalled, statusCode, responseBody, headers,
+    finish(code = statusCode) {
+      statusCode = code;
+      if (finishListener) finishListener();
+    },
+  };
 };
 
 test('rate limiter allows requests up to the configured maximum', () => {
@@ -90,4 +102,25 @@ test('rate limiter rejects invalid configuration', () => {
     () => createRateLimiter({ windowMs: 1000, max: 0, message: 'invalid' }),
     /positive windowMs/
   );
+});
+
+
+test('successful requests are not counted when skipSuccessfulRequests is enabled', () => {
+  const limiter = createRateLimiter({
+    windowMs: 60_000,
+    max: 1,
+    skipSuccessfulRequests: true,
+    message: 'Too many failed attempts',
+  });
+
+  const successful = runRequest(limiter, '198.51.100.20');
+  successful.finish(200);
+  const failed = runRequest(limiter, '198.51.100.20');
+  failed.finish(401);
+  const blocked = runRequest(limiter, '198.51.100.20');
+
+  assert.equal(successful.nextCalled, true);
+  assert.equal(failed.nextCalled, true);
+  assert.equal(blocked.statusCode, 429);
+  assert.equal(blocked.nextCalled, false);
 });

@@ -17,6 +17,7 @@ import {
   showToast,
   escapeHtml,
   syncPostsFromApi,
+  installImageFallbacks,
 } from './blog.js';
 
 // State
@@ -31,6 +32,7 @@ const CATEGORIES = ['All', 'Technology', 'Design', 'Productivity', 'Culture', 'B
  * Initialize Homepage
  */
 export async function initHomePage() {
+  installImageFallbacks();
   initStorage();
   updateNavAuthUI();
   setupMobileNav();
@@ -272,7 +274,7 @@ export function renderArticles() {
         return `
           <article class="article-card" data-id="${escapeHtml(post.id)}">
             <div class="card-image-wrap">
-              <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="card-cover-image" loading="lazy" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80';" />
+              <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="card-cover-image" loading="lazy" data-fallback="https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=800&q=80" />
               <span class="card-category-badge">${escapeHtml(post.category)}</span>
             </div>
             <div class="card-body">
@@ -326,7 +328,7 @@ function renderFeaturedPost(post) {
   container.innerHTML = `
     <div class="featured-card">
       <div class="featured-image-col">
-        <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="featured-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80';" />
+        <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="featured-cover" data-fallback="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80" />
         <span class="featured-flag">Featured Article</span>
       </div>
       <div class="featured-content-col">
@@ -456,7 +458,7 @@ export function openArticleModal(id) {
           </div>
 
           <div class="reader-hero-image-wrap">
-            <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="reader-hero-img" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80';" />
+            <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="reader-hero-img" data-fallback="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80" />
           </div>
 
           <div class="reader-prose">
