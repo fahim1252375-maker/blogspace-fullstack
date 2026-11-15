@@ -1,56 +1,75 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-// 404 Route Handler for undefined endpoints
-export const notFound = (req: Request, res: Response, next: NextFunction): void => {
-  const error = new Error(`Resource Not Found — ${req.originalUrl}`);
-  res.status(404);
-  next(error);
+type AppError = Error & {
+  status?: number;
+  statusCode?: number;
+  type?: string;
+  code?: number;
+  keyValue?: Record<string, unknown>;
+  errors?: Record<string, { message?: string }>;
 };
 
-// Centralized Error Handling Middleware
-export const errorHandler = (
-  err: any,
-  req: Request,
+export const notFound = (
+  _req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void => {
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  let message = err.message || 'Internal Server Error';
+  res.status(404);
+  next(new Error("Resource not found"));
+};
 
-  // Handle Mongoose Bad ObjectId (CastError)
-  if (err.name === 'CastError' && err.kind === 'ObjectId') {
+export const errorHandler = (
+  err: AppError,
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  let statusCode = Number(err.statusCode ?? err.status ?? res.statusCode ?? 500);
+  if (!Number.isInteger(statusCode) || statusCode < 400 || statusCode > 599) {
+    statusCode = 500;
+  }
+
+  let message = err.message || "Internal Server Error";
+
+  if (err.type === "entity.too.large") {
+    statusCode = 413;
+    message = "Request body is too large";
+  } else if (err.type === "entity.parse.failed") {
+    statusCode = 400;
+    message = "Request body contains invalid JSON";
+  } else if (err.name === "CastError" && (err as any).kind === "ObjectId") {
     statusCode = 404;
-    message = 'Resource not found with the requested identifier';
-  }
-
-  // Handle Mongoose duplicate key error (code 11000)
-  if (err.code === 11000) {
+    message = "Resource not found";
+  } else if (err.code === 11000) {
+    statusCode = 409;
+    const field = Object.keys(err.keyValue || {})[0] || "field";
+    message = "A record with this " + field + " already exists";
+  } else if (err.name === "ValidationError") {
     statusCode = 400;
-    const field = Object.keys(err.keyValue || {})[0] || 'field';
-    message = `Duplicate value entered for ${field}. Please use another value.`;
+    message = Object.values(err.errors || {})
+      .map((value) => value.message || "Invalid value")
+      .join(", ");
+  } else if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "Invalid authentication token";
+  } else if (err.name === "TokenExpiredError") {
+    statusCode = 401;
+    message = "Authentication token expired; please log in again";
   }
 
-  // Handle Mongoose validation errors
-  if (err.name === 'ValidationError') {
-    statusCode = 400;
-    message = Object.values(err.errors)
-      .map((val: any) => val.message)
-      .join(', ');
-  }
-
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Invalid authentication token';
-  }
-  if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Authentication token expired, please log in again';
+  const isProduction = process.env.NODE_ENV === "production";
+  if (statusCode >= 500 && isProduction) {
+    message = "Internal server error";
   }
 
   res.status(statusCode).json({
     success: false,
     message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    ...(isProduction ? {} : { stack: err.stack }),
   });
 };

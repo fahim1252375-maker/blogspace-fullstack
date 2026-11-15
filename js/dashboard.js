@@ -15,6 +15,7 @@ import {
   showToast,
   escapeHtml,
   syncMyPostsFromApi,
+  installImageFallbacks,
 } from './blog.js';
 
 let activeFilter = 'all'; // 'all' | 'published' | 'draft'
@@ -25,6 +26,7 @@ let postToDeleteId = null;
  * Initialize Dashboard
  */
 export async function initDashboard() {
+  installImageFallbacks();
   let currentUser = null;
 
   try {
@@ -251,7 +253,7 @@ export function renderDashboard() {
       return `
         <div class="post-table-row" data-id="${escapeHtml(post.id)}">
           <div class="post-col-main">
-            <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="post-table-thumb" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=400&q=80';" />
+            <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="post-table-thumb" data-fallback="https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=400&q=80" />
             <div class="post-table-info">
               <span class="category-pill-sm">${escapeHtml(post.category)}</span>
               <h3 class="post-table-title">${escapeHtml(post.title)}</h3>
@@ -383,7 +385,7 @@ function openPreviewModal(id) {
               <div class="article-meta-sub">${formatDate(post.createdAt)} • ${post.readingTime || 1} min read • Status: <strong>${escapeHtml(post.status)}</strong></div>
             </div>
           </div>
-          <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="article-reader-cover" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80';" />
+          <img src="${escapeHtml(coverUrl)}" alt="${escapeHtml(post.title)}" class="article-reader-cover" data-fallback="https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=80" />
           <div class="article-reader-content">
             ${formattedContent}
           </div>

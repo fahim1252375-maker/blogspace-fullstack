@@ -1,32 +1,61 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
+import { checkJwtSecret } from "./securityConfig.ts";
 
-/**
- * Retrieves the JWT Secret from environment variables.
- * In production, it strictly throws an error if JWT_SECRET is not set.
- * In development, it warns and provides a development-only secret.
- */
+const JWT_ALGORITHM = "HS256" as const;
+
 export const getJwtSecret = (): string => {
   const secret = process.env.JWT_SECRET;
-  if (!secret || !secret.trim()) {
-    throw new Error(
-      '[BlogSpace Security] FATAL: JWT_SECRET environment variable is missing! Configure a secure JWT_SECRET in environment variables.'
-    );
+  const result = checkJwtSecret(secret, process.env.NODE_ENV === "production");
+
+  if (!result.ok && result.fatal) {
+    throw new Error("[BlogSpace Security] FATAL: " + result.message);
   }
-  return secret;
+  if (!secret || !secret.trim()) {
+    throw new Error("[BlogSpace Security] FATAL: JWT_SECRET is missing.");
+  }
+
+  return secret.trim();
 };
 
-/**
- * Signs a JWT token with user id payload and 7-day expiration.
- */
+/** Called once by server.ts during startup. */
+export const assertJwtConfig = (): void => {
+  const result = checkJwtSecret(
+    process.env.JWT_SECRET,
+    process.env.NODE_ENV === "production"
+  );
+
+  if (result.ok) return;
+  if (result.fatal) {
+    throw new Error("[BlogSpace Security] FATAL: " + result.message);
+  }
+  console.warn("[BlogSpace Security] WARNING: " + result.message);
+};
+
 export const generateToken = (id: string): string => {
+  if (typeof id !== "string" || !id.trim()) {
+    throw new TypeError("A non-empty user id is required to generate a token.");
+  }
+
   return jwt.sign({ id }, getJwtSecret(), {
-    expiresIn: '7d',
+    algorithm: JWT_ALGORITHM,
+    expiresIn: "7d",
   });
 };
 
-/**
- * Verifies a JWT token and returns the decoded payload.
- */
 export const verifyToken = (token: string): { id: string } => {
-  return jwt.verify(token, getJwtSecret()) as { id: string };
+  const decoded = jwt.verify(token, getJwtSecret(), {
+    algorithms: [JWT_ALGORITHM],
+  });
+
+  if (
+    typeof decoded !== "object" ||
+    decoded === null ||
+    Array.isArray(decoded) ||
+    typeof decoded.id !== "string" ||
+    !decoded.id.trim()
+  ) {
+    throw new Error("Invalid token payload");
+  }
+
+  return { id: decoded.id };
 };

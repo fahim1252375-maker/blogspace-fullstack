@@ -4,6 +4,7 @@ import { Blog } from '../models/Blog.ts';
 import { isDbConnected, isInMemoryFallbackActive } from '../config/db.ts';
 import { inMemoryStore } from '../config/inMemoryStore.ts';
 import { AuthRequest } from '../middleware/authMiddleware.ts';
+import { parseCreateBlogInput, parseUpdateBlogInput } from '../utils/blogValidation.ts';
 
 // Helper to escape special characters for safe regular expression creation (ReDoS prevention)
 const escapeRegExp = (str: string): string => {
@@ -35,9 +36,9 @@ export const getBlogs = async (
         const safeCategory = escapeRegExp(String(category).trim());
         query.category = new RegExp(`^${safeCategory}$`, 'i');
       }
-      if (author && mongoose.Types.ObjectId.isValid(String(author))) query.author = author;
+      if (author && mongoose.Types.ObjectId.isValid(String(author))) query.author = String(author);
       if (search) {
-        const safeSearch = escapeRegExp(String(search).trim());
+        const safeSearch = escapeRegExp(String(search).trim().slice(0, 100));
         const searchRegex = new RegExp(safeSearch, 'i');
         query.$or = [
           { title: searchRegex }, { description: searchRegex },
@@ -64,7 +65,7 @@ export const getBlogs = async (
         author: author ? String(author) : undefined,
       });
       if (search) {
-        const q = String(search).toLowerCase();
+        const q = String(search).trim().slice(0, 100).toLowerCase();
         blogs = blogs.filter((b) =>
           b.title.toLowerCase().includes(q) ||
           b.description.toLowerCase().includes(q) ||
@@ -106,7 +107,7 @@ export const getMyBlogs = async (
         query.category = new RegExp(`^${safeCategory}$`, 'i');
       }
       if (search) {
-        const safeSearch = escapeRegExp(String(search).trim());
+        const safeSearch = escapeRegExp(String(search).trim().slice(0, 100));
         const searchRegex = new RegExp(safeSearch, 'i');
         query.$or = [
           { title: searchRegex }, { description: searchRegex },
@@ -133,7 +134,7 @@ export const getMyBlogs = async (
         category: category ? String(category) : undefined,
       });
       if (search) {
-        const q = String(search).toLowerCase();
+        const q = String(search).trim().slice(0, 100).toLowerCase();
         blogs = blogs.filter((b) =>
           b.title.toLowerCase().includes(q) ||
           b.description.toLowerCase().includes(q) ||
@@ -255,23 +256,12 @@ export const createBlog = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { title, description, content, category, coverImage, status } = req.body;
-
-    if (!title || !title.trim()) {
-      res.status(400).json({
-        success: false,
-        message: 'Story title is required',
-      });
+    const parsed = parseCreateBlogInput(req.body);
+    if (!parsed.ok) {
+      res.status(400).json({ success: false, message: parsed.message });
       return;
     }
-
-    if (!content || !content.trim()) {
-      res.status(400).json({
-        success: false,
-        message: 'Story content is required',
-      });
-      return;
-    }
+    const { title, description, content, category, coverImage, status } = parsed.value;
 
     const user = req.user!;
     const readingTime = computeReadingTime(content);
@@ -364,7 +354,12 @@ export const updateBlog = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { title, description, content, category, coverImage, status } = req.body;
+    const parsed = parseUpdateBlogInput(req.body);
+    if (!parsed.ok) {
+      res.status(400).json({ success: false, message: parsed.message });
+      return;
+    }
+    const { title, description, content, category, coverImage, status } = parsed.value;
     const currentUser = req.user!;
 
     if (isDbConnected()) {

@@ -4,6 +4,7 @@ interface RateLimitOptions {
   windowMs: number;
   max: number;
   message: string;
+  skipSuccessfulRequests?: boolean;
 }
 
 interface ClientBucket {
@@ -21,6 +22,7 @@ export const createRateLimiter = ({
   windowMs,
   max,
   message,
+  skipSuccessfulRequests = false,
 }: RateLimitOptions): RequestHandler => {
   if (!Number.isFinite(windowMs) || windowMs <= 0 || !Number.isInteger(max) || max <= 0) {
     throw new Error('Rate limiter requires a positive windowMs and a positive integer max.');
@@ -55,6 +57,16 @@ export const createRateLimiter = ({
     // Move the active client to the end so the oldest inactive bucket is evicted first.
     clients.delete(clientKey);
     clients.set(clientKey, bucket);
+
+    if (skipSuccessfulRequests) {
+      const requestBucket = bucket;
+      res.once("finish", () => {
+        if (res.statusCode < 400 && clients.get(clientKey) === requestBucket) {
+          requestBucket.count = Math.max(0, requestBucket.count - 1);
+          if (requestBucket.count === 0) clients.delete(clientKey);
+        }
+      });
+    }
 
     const remaining = Math.max(0, max - bucket.count);
     const resetInSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
