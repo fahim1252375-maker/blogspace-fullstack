@@ -43,7 +43,7 @@ export const createProtectMiddleware = ({
   res.setHeader('Vary', 'Authorization');
 
   const authorization = req.headers.authorization || '';
-  const bearerMatch = authorization.match(/^Bearer\\s+(.+)$/i);
+  const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i);
   const token = bearerMatch?.[1].trim();
 
   if (!token) {
